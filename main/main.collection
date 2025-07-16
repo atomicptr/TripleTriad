@@ -1,2 +1,56 @@
 name: "main"
+instances {
+  id: "board"
+  prototype: "/main/board/board.go"
+}
+instances {
+  id: "cursor"
+  prototype: "/main/cursor/cursor.go"
+  position {
+    z: 80.0
+  }
+}
+instances {
+  id: "hand_player"
+  prototype: "/main/hand/hand.go"
+  position {
+    x: -432.0
+    y: -200.0
+    z: 20.0
+  }
+  component_properties {
+    id: "player_hand"
+    properties {
+      id: "player_hand"
+      value: "true"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+  }
+}
+instances {
+  id: "hand_ai"
+  prototype: "/main/hand/hand.go"
+  position {
+    x: 432.0
+    y: -200.0
+    z: 20.0
+  }
+}
 scale_along_z: 0
+embedded_instances {
+  id: "camera"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 1000.0\\n"
+  "orthographic_projection: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 100.0
+  }
+}

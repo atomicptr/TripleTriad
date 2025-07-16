@@ -1,0 +1,79 @@
+local Element = require "main.data.elements"
+local cards = require "main.data.cards"
+
+go.property("card_id", 1)
+go.property("player_card", false)
+go.property("visible", true)
+
+---@param rank integer
+---@return hash
+local function card_rank(rank)
+    if rank == 10 then
+        return hash "A"
+    end
+    return hash(tostring(rank))
+end
+
+---@param element Element
+---@return hash
+local function element_hash(element)
+    if element == Element.Earth then
+        return hash "earth"
+    elseif element == Element.Fire then
+        return hash "fire"
+    elseif element == Element.Holy then
+        return hash "holy"
+    elseif element == Element.Ice then
+        return hash "ice"
+    elseif element == Element.Poison then
+        return hash "poison"
+    elseif element == Element.Thunder then
+        return hash "thunder"
+    elseif element == Element.Water then
+        return hash "water"
+    elseif element == Element.Wind then
+        return hash "wind"
+    end
+
+    assert(false, "unreachable")
+end
+
+local function setup_card(self)
+    self.card = cards[self.card_id]
+
+    if not self.visible then
+        sprite.play_flipbook("#front", hash "card-back")
+        msg.post("#back", "disable")
+
+        msg.post("#rank_top", "disable")
+        msg.post("#rank_bottom", "disable")
+        msg.post("#rank_left", "disable")
+        msg.post("#rank_right", "disable")
+
+        msg.post("#element", "disable")
+        return
+    end
+
+    sprite.play_flipbook("#front", hash(self.card_id))
+
+    sprite.play_flipbook("#rank_top", card_rank(self.card.top))
+    sprite.play_flipbook("#rank_bottom", card_rank(self.card.bottom))
+    sprite.play_flipbook("#rank_left", card_rank(self.card.left))
+    sprite.play_flipbook("#rank_right", card_rank(self.card.right))
+
+    if self.card.element then
+        sprite.play_flipbook("#element", element_hash(self.card.element))
+    else
+        msg.post("#element", "disable")
+    end
+end
+
+function init(self)
+    if self.player_card then
+        go.set("#back", "tint", vmath.vector4(0, 0, 1, 1))
+    else
+        go.set("#back", "tint", vmath.vector4(1, 0, 0, 1))
+    end
+
+    setup_card(self)
+end

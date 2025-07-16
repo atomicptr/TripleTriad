@@ -1,0 +1,27 @@
+go.property("player_hand", false)
+go.property("cards_visible", true)
+
+function init(self)
+    msg.post("#placeholder", "disable")
+
+    self.index = nil
+end
+
+function set_cards(self, cards)
+    local pos = go.get_position()
+
+    for _, card_id in ipairs(cards) do
+        factory.create("#card_factory", pos, nil, {
+            card_id = card_id,
+            player_card = self.player_hand,
+            visible = self.cards_visible,
+        })
+        pos = pos + vmath.vector3(0, 100, -1)
+    end
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash "set_cards" then
+        set_cards(self, message.cards)
+    end
+end

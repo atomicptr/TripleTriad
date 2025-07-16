@@ -1,0 +1,59 @@
+local CURSOR_SPEED = 15
+
+local DURATION = 0.5
+local DISTANCE = 20.0
+
+function init(self)
+    self.moving = false
+    self.target_pos = nil
+    self.sender = nil
+    self.speed = 0
+    self.time = 0
+    self.start_pos = go.get_position()
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash "move" then
+        self.target_pos = vmath.vector3(message.target_pos.x, message.target_pos.y, go.get_position().z)
+        self.sender = sender
+        self.speed = CURSOR_SPEED
+        self.start_pos = go.get_position()
+
+        if message.skip_anim then
+            go.set_position(self.target_pos)
+            msg.post(self.sender, "cursor_done_moving")
+        end
+
+        self.moving = true
+    end
+end
+
+function update(self, dt)
+    self.time = self.time + dt
+
+    if not self.moving then
+        local normalized_position = (math.sin(self.time * (math.pi / DURATION)) + 1) / 2
+
+        local target_x = self.start_pos.x + (normalized_position * DISTANCE * 2) - DISTANCE
+        go.set_position(
+            vmath.lerp(
+                CURSOR_SPEED * dt,
+                go.get_position(),
+                vmath.vector3(target_x, go.get_position().y, go.get_position().z)
+            )
+        )
+
+        return
+    end
+
+    self.speed = self.speed + dt
+
+    go.set_position(vmath.lerp(self.speed * dt, go.get_position(), self.target_pos))
+
+    if vmath.length(go.get_position() - self.target_pos) <= 0.5 then
+        self.start_pos = self.target_pos
+
+        self.moving = false
+        msg.post(self.sender, "cursor_done_moving")
+    end
+end

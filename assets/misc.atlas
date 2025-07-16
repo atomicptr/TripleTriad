@@ -1,0 +1,37 @@
+images {
+  image: "/assets/textures/bg-board.jpg"
+}
+images {
+  image: "/assets/textures/bg-result.jpg"
+}
+images {
+  image: "/assets/textures/capture-combo.png"
+}
+images {
+  image: "/assets/textures/capture-plus.png"
+}
+images {
+  image: "/assets/textures/capture-same.png"
+}
+images {
+  image: "/assets/textures/cursor.png"
+}
+images {
+  image: "/assets/textures/element-negative-text.png"
+}
+images {
+  image: "/assets/textures/element-positive-text.png"
+}
+images {
+  image: "/assets/textures/result-draw.png"
+}
+images {
+  image: "/assets/textures/result-lose.png"
+}
+images {
+  image: "/assets/textures/result-win.png"
+}
+images {
+  image: "/assets/textures/score-text.png"
+}
+extrude_borders: 2

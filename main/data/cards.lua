@@ -1,16 +1,18 @@
-local Element = {
-    Thunder = 0,
-    Earth = 1,
-    Ice = 2,
-    Wind = 3,
-    Poison = 4,
-    Fire = 5,
-    Water = 6,
-    Holy = 7,
-}
+local Element = require "main.data.elements"
 
-local cards = {
+---@class Card
+---@field id integer @field name string
+---@field level integer
+---@field top integer
+---@field right integer
+---@field bottom integer
+---@field left integer
+---@field element Element|nil
+
+---@type Card[]
+return {
     {
+        id = 1,
         name = "Geezard",
         level = 1,
         top = 1,
@@ -20,6 +22,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 2,
         name = "Funguar",
         level = 1,
         top = 5,
@@ -29,6 +32,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 3,
         name = "Bite Bug",
         level = 1,
         top = 1,
@@ -38,6 +42,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 4,
         name = "Red Bat",
         level = 1,
         top = 6,
@@ -47,6 +52,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 5,
         name = "Blobra",
         level = 1,
         top = 2,
@@ -56,6 +62,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 6,
         name = "Gayla",
         level = 1,
         top = 2,
@@ -65,6 +72,7 @@ local cards = {
         element = Element.Thunder,
     },
     {
+        id = 7,
         name = "Gesper",
         level = 1,
         top = 1,
@@ -74,6 +82,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 8,
         name = "Fastitocalon-F",
         level = 1,
         top = 3,
@@ -83,6 +92,7 @@ local cards = {
         element = Element.Earth,
     },
     {
+        id = 9,
         name = "Blood Soul",
         level = 1,
         top = 2,
@@ -92,6 +102,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 10,
         name = "Caterchipillar",
         level = 1,
         top = 4,
@@ -101,6 +112,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 11,
         name = "Cockatrice",
         level = 1,
         top = 2,
@@ -112,6 +124,7 @@ local cards = {
 
     -- Level 2
     {
+        id = 12,
         name = "Grat",
         level = 2,
         top = 7,
@@ -121,6 +134,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 13,
         name = "Buel",
         level = 2,
         top = 6,
@@ -130,6 +144,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 14,
         name = "Mesmerize",
         level = 2,
         top = 5,
@@ -139,6 +154,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 15,
         name = "Glacial Eye",
         level = 2,
         top = 6,
@@ -148,6 +164,7 @@ local cards = {
         element = Element.Ice,
     },
     {
+        id = 16,
         name = "Belhelmel",
         level = 2,
         top = 3,
@@ -157,6 +174,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 17,
         name = "Thrustaevis",
         level = 2,
         top = 5,
@@ -166,6 +184,7 @@ local cards = {
         element = Element.Wind,
     },
     {
+        id = 18,
         name = "Anacondaur",
         level = 2,
         top = 5,
@@ -175,6 +194,7 @@ local cards = {
         element = Element.Poison,
     },
     {
+        id = 19,
         name = "Creeps",
         level = 2,
         top = 5,
@@ -184,6 +204,7 @@ local cards = {
         element = Element.Thunder,
     },
     {
+        id = 20,
         name = "Grendel",
         level = 2,
         top = 4,
@@ -193,6 +214,7 @@ local cards = {
         element = Element.Thunder,
     },
     {
+        id = 21,
         name = "Jelleye",
         level = 2,
         top = 3,
@@ -202,6 +224,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 22,
         name = "Grand Mantis",
         level = 2,
         top = 5,
@@ -213,6 +236,7 @@ local cards = {
 
     -- Level 3
     {
+        id = 23,
         name = "Forbidden",
         level = 3,
         top = 6,
@@ -222,6 +246,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 24,
         name = "Armadodo",
         level = 3,
         top = 6,
@@ -231,6 +256,7 @@ local cards = {
         element = Element.Earth,
     },
     {
+        id = 25,
         name = "Tri-Face",
         level = 3,
         top = 3,
@@ -240,6 +266,7 @@ local cards = {
         element = Element.Poison,
     },
     {
+        id = 26,
         name = "Fastitocalon",
         level = 3,
         top = 7,
@@ -249,6 +276,7 @@ local cards = {
         element = Element.Earth,
     },
     {
+        id = 27,
         name = "Snow Lion",
         level = 3,
         top = 7,
@@ -258,6 +286,7 @@ local cards = {
         element = Element.Ice,
     },
     {
+        id = 28,
         name = "Ochu",
         level = 3,
         top = 5,
@@ -267,6 +296,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 29,
         name = "SAM08G",
         level = 3,
         top = 5,
@@ -276,6 +306,7 @@ local cards = {
         element = Element.Fire,
     },
     {
+        id = 30,
         name = "Death Claw",
         level = 3,
         top = 4,
@@ -285,6 +316,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 31,
         name = "Cactuar",
         level = 3,
         top = 6,
@@ -294,6 +326,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 32,
         name = "Tonberry",
         level = 3,
         top = 4,
@@ -303,6 +336,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 33,
         name = "Abyss Worm",
         level = 3,
         top = 7,
@@ -314,6 +348,7 @@ local cards = {
 
     -- Level 4
     {
+        id = 34,
         name = "Turtapod",
         level = 4,
         top = 2,
@@ -323,6 +358,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 35,
         name = "Vysage",
         level = 4,
         top = 6,
@@ -332,6 +368,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 36,
         name = "T-Rexaur",
         level = 4,
         top = 4,
@@ -341,6 +378,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 37,
         name = "Bomb",
         level = 4,
         top = 2,
@@ -350,6 +388,7 @@ local cards = {
         element = Element.Fire,
     },
     {
+        id = 38,
         name = "Blitz",
         level = 4,
         top = 1,
@@ -359,6 +398,7 @@ local cards = {
         element = Element.Thunder,
     },
     {
+        id = 39,
         name = "Wendigo",
         level = 4,
         top = 7,
@@ -368,6 +408,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 40,
         name = "Torama",
         level = 4,
         top = 7,
@@ -377,6 +418,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 41,
         name = "Imp",
         level = 4,
         top = 3,
@@ -386,6 +428,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 42,
         name = "Blue Dragon",
         level = 4,
         top = 6,
@@ -395,6 +438,7 @@ local cards = {
         element = Element.Poison,
     },
     {
+        id = 43,
         name = "Adamantoise",
         level = 4,
         top = 5,
@@ -404,6 +448,7 @@ local cards = {
         element = Element.Earth,
     },
     {
+        id = 44,
         name = "Hexadragon",
         level = 4,
         top = 7,
@@ -415,6 +460,7 @@ local cards = {
 
     -- Level 5
     {
+        id = 45,
         name = "Iron Giant",
         level = 5,
         top = 6,
@@ -424,6 +470,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 46,
         name = "Behemoth",
         level = 5,
         top = 3,
@@ -433,6 +480,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 47,
         name = "Chimera",
         level = 5,
         top = 7,
@@ -442,6 +490,7 @@ local cards = {
         element = Element.Water,
     },
     {
+        id = 48,
         name = "PuPu",
         level = 5,
         top = 3,
@@ -451,6 +500,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 49,
         name = "Elastoid",
         level = 5,
         top = 6,
@@ -460,6 +510,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 50,
         name = "GIM47N",
         level = 5,
         top = 5,
@@ -469,6 +520,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 51,
         name = "Malboro",
         level = 5,
         top = 7,
@@ -478,6 +530,7 @@ local cards = {
         element = Element.Poison,
     },
     {
+        id = 52,
         name = "Ruby Dragon",
         level = 5,
         top = 7,
@@ -487,6 +540,7 @@ local cards = {
         element = Element.Fire,
     },
     {
+        id = 53,
         name = "Elnoyle",
         level = 5,
         top = 5,
@@ -496,6 +550,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 54,
         name = "Tonberry King",
         level = 5,
         top = 4,
@@ -505,6 +560,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 55,
         name = "Wedge, Biggs",
         level = 5,
         top = 6,
@@ -516,6 +572,7 @@ local cards = {
 
     -- Level 6
     {
+        id = 56,
         name = "Fujin, Raijin",
         level = 6,
         top = 2,
@@ -525,6 +582,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 57,
         name = "Elvoret",
         level = 6,
         top = 7,
@@ -534,6 +592,7 @@ local cards = {
         element = Element.Wind,
     },
     {
+        id = 58,
         name = "X-ATM092",
         level = 6,
         top = 4,
@@ -543,6 +602,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 59,
         name = "Granaldo",
         level = 6,
         top = 7,
@@ -552,6 +612,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 60,
         name = "Gerogero",
         level = 6,
         top = 1,
@@ -561,6 +622,7 @@ local cards = {
         element = Element.Poison,
     },
     {
+        id = 61,
         name = "Iguion",
         level = 6,
         top = 8,
@@ -570,6 +632,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 62,
         name = "Abadon",
         level = 6,
         top = 6,
@@ -579,6 +642,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 63,
         name = "Trauma",
         level = 6,
         top = 4,
@@ -588,6 +652,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 64,
         name = "Oilboyle",
         level = 6,
         top = 1,
@@ -597,6 +662,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 65,
         name = "Shumi Tribe",
         level = 6,
         top = 6,
@@ -606,6 +672,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 66,
         name = "Krysta",
         level = 6,
         top = 1,
@@ -617,6 +684,7 @@ local cards = {
 
     -- Level 7
     {
+        id = 67,
         name = "Propagator",
         level = 7,
         top = 8,
@@ -626,6 +694,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 68,
         name = "Jumbo Cactuar",
         level = 7,
         top = 8,
@@ -635,6 +704,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 69,
         name = "Triad King",
         level = 7,
         top = 5,
@@ -644,6 +714,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 70,
         name = "Gargantua",
         level = 7,
         top = 5,
@@ -653,6 +724,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 71,
         name = "Mobile Type 8",
         level = 7,
         top = 8,
@@ -662,6 +734,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 72,
         name = "Sphinxara",
         level = 7,
         top = 8,
@@ -671,6 +744,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 73,
         name = "Tiamat",
         level = 7,
         top = 8,
@@ -680,6 +754,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 74,
         name = "BGH251F2",
         level = 7,
         top = 5,
@@ -689,6 +764,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 75,
         name = "Red Giant",
         level = 7,
         top = 6,
@@ -698,6 +774,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 76,
         name = "Catoblepas",
         level = 7,
         top = 1,
@@ -707,6 +784,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 77,
         name = "Ultima Weapon",
         level = 7,
         top = 7,
@@ -718,6 +796,7 @@ local cards = {
 
     -- Level 8
     {
+        id = 78,
         name = "Chubby Chocobo",
         level = 8,
         top = 4,
@@ -727,6 +806,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 79,
         name = "Angelo",
         level = 8,
         top = 6,
@@ -736,6 +816,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 80,
         name = "Gilgamesh",
         level = 8,
         top = 3,
@@ -745,6 +826,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 81,
         name = "MiniMog",
         level = 8,
         top = 9,
@@ -754,6 +836,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 82,
         name = "Chicobo",
         level = 8,
         top = 9,
@@ -763,6 +846,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 83,
         name = "Quezacotl",
         level = 8,
         top = 2,
@@ -772,6 +856,7 @@ local cards = {
         element = Element.Thunder,
     },
     {
+        id = 84,
         name = "Shiva",
         level = 8,
         top = 6,
@@ -781,6 +866,7 @@ local cards = {
         element = Element.Ice,
     },
     {
+        id = 85,
         name = "Ifrit",
         level = 8,
         top = 9,
@@ -790,6 +876,7 @@ local cards = {
         element = Element.Fire,
     },
     {
+        id = 86,
         name = "Siren",
         level = 8,
         top = 8,
@@ -799,6 +886,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 87,
         name = "Sacred",
         level = 8,
         top = 9,
@@ -808,6 +896,7 @@ local cards = {
         element = Element.Earth,
     },
     {
+        id = 88,
         name = "Minotaur",
         level = 8,
         top = 9,
@@ -819,6 +908,7 @@ local cards = {
 
     -- Level 9
     {
+        id = 89,
         name = "Carbuncle",
         level = 9,
         top = 8,
@@ -828,6 +918,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 90,
         name = "Diablos",
         level = 9,
         top = 5,
@@ -837,6 +928,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 91,
         name = "Leviathan",
         level = 9,
         top = 7,
@@ -846,6 +938,7 @@ local cards = {
         element = Element.Water,
     },
     {
+        id = 92,
         name = "Odin",
         level = 9,
         top = 8,
@@ -855,6 +948,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 93,
         name = "Pandemona",
         level = 9,
         top = 10,
@@ -864,6 +958,7 @@ local cards = {
         element = Element.Wind,
     },
     {
+        id = 94,
         name = "Cerberus",
         level = 9,
         top = 7,
@@ -873,6 +968,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 95,
         name = "Alexander",
         level = 9,
         top = 9,
@@ -882,6 +978,7 @@ local cards = {
         element = Element.Holy,
     },
     {
+        id = 96,
         name = "Phoenix",
         level = 9,
         top = 7,
@@ -891,6 +988,7 @@ local cards = {
         element = Element.Fire,
     },
     {
+        id = 97,
         name = "Bahamut",
         level = 9,
         top = 10,
@@ -900,6 +998,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 98,
         name = "Doomtrain",
         level = 9,
         top = 3,
@@ -909,6 +1008,7 @@ local cards = {
         element = Element.Poison,
     },
     {
+        id = 99,
         name = "Eden",
         level = 9,
         top = 4,
@@ -920,6 +1020,7 @@ local cards = {
 
     -- Level 10
     {
+        id = 100,
         name = "Ward",
         level = 10,
         top = 10,
@@ -929,6 +1030,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 101,
         name = "Kiros",
         level = 10,
         top = 6,
@@ -938,6 +1040,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 102,
         name = "Laguna",
         level = 10,
         top = 5,
@@ -947,6 +1050,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 103,
         name = "Selphie",
         level = 10,
         top = 10,
@@ -956,6 +1060,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 104,
         name = "Quistis",
         level = 10,
         top = 9,
@@ -965,6 +1070,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 105,
         name = "Irvine",
         level = 10,
         top = 2,
@@ -974,6 +1080,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 106,
         name = "Zell",
         level = 10,
         top = 8,
@@ -983,6 +1090,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 107,
         name = "Rinoa",
         level = 10,
         top = 4,
@@ -992,6 +1100,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 108,
         name = "Edea",
         level = 10,
         top = 10,
@@ -1001,6 +1110,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 109,
         name = "Seifer",
         level = 10,
         top = 6,
@@ -1010,6 +1120,7 @@ local cards = {
         element = nil,
     },
     {
+        id = 110,
         name = "Squall",
         level = 10,
         top = 10,
@@ -1018,9 +1129,4 @@ local cards = {
         left = 9,
         element = nil,
     },
-}
-
-return {
-    Element = Element,
-    cards = cards,
 }
