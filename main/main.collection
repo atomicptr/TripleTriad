@@ -54,3 +54,11 @@ embedded_instances {
     z: 100.0
   }
 }
+embedded_instances {
+  id: "game"
+  data: "components {\n"
+  "  id: \"game\"\n"
+  "  component: \"/main/game.script\"\n"
+  "}\n"
+  ""
+}

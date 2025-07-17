@@ -1,0 +1,224 @@
+local cards = require "main.data.cards"
+local Grid = require "main.data.grid"
+
+local Pos = Grid.Pos
+
+---@class OwnedCard
+---@field card Card
+---@field player boolean
+
+---@enum State
+local State = {
+    GAME_START = 0,
+    PLAYER_HAND = 1,
+    PLAYER_FIELD = 2,
+    BATTLE_PHASE = 3,
+    ENEMY_TURN = 4,
+    GAME_END = 5,
+}
+
+---@class Game
+---@field state State
+---@field field table<Pos, table<Pos, OwnedCard|nil>>
+---@field player_turn boolean
+---@field player_hand integer[]
+---@field enemy_hand integer[]
+---@field hand_selected integer|nil
+
+---@param self Game
+function init(self)
+    self.state = State.GAME_START
+    self.field = nil
+
+    msg.post(".", "acquire_input_focus")
+end
+
+---@param self Game
+function update(self, dt)
+    print(self.state)
+
+    if self.state == State.GAME_START then
+        self.hand_selected = nil
+
+        -- TODO: figure out decks somehow
+        self.player_hand = { 110, 100, 73, 63, 15 }
+        self.enemy_hand = { 42, 2, 4, 10, 55 }
+
+        self.field = {
+            [Pos.North] = {
+                [Pos.West] = nil,
+                [Pos.Center] = nil,
+                [Pos.East] = nil,
+            },
+            [Pos.Center] = {
+                [Pos.West] = nil,
+                [Pos.Center] = nil,
+                [Pos.East] = nil,
+            },
+            [Pos.South] = {
+                [Pos.West] = nil,
+                [Pos.Center] = nil,
+                [Pos.East] = nil,
+            },
+        }
+
+        msg.post("/hand_player", "set_cards", {
+            cards = self.player_hand,
+        })
+
+        msg.post("/hand_enemy", "set_cards", {
+            cards = self.enemy_hand,
+        })
+
+        -- TODO: do some more setup?
+        self.player_turn = true
+        self.state = State.PLAYER_HAND
+        msg.post("/hand_player", "init")
+    elseif self.state == State.PLAYER_HAND then
+        self.player_turn = true
+    elseif self.state == State.PLAYER_FIELD then
+    elseif self.state == State.BATTLE_PHASE then
+        -- TODO: evaluate card effects
+
+        if #self.player_hand == 0 and #self.enemy_hand == 0 then
+            self.state = State.GAME_END
+            return
+        end
+
+        if self.player_turn then
+            self.state = State.ENEMY_TURN
+
+            -- enemy has no cards for some reason? Go to player
+            if #self.enemy_hand == 0 then
+                msg.post("/hand_player", "init")
+                self.state = State.PLAYER_HAND
+                return
+            end
+
+            -- TODO: send message to enemy something
+        else
+            self.state = State.PLAYER_HAND
+
+            -- player has no cards for some reason? Go to enemy
+            if #self.player_hand == 0 then
+                msg.post("/cursor", "hide")
+                self.state = State.ENEMY_TURN
+                return
+            end
+
+            msg.post("/hand_player", "init")
+        end
+    elseif self.state == State.ENEMY_TURN then
+        self.player_turn = false
+
+        -- TODO: to ai stuff, play card
+        self.state = State.BATTLE_PHASE
+    elseif self.state == State.GAME_END then
+        print "Game End"
+    end
+end
+
+---@param self Game
+function move_cursor(self, direction)
+    if self.state == State.PLAYER_HAND then
+        if direction == "left" or direction == "right" then
+            return
+        end
+
+        msg.post("/hand_player", "move_cursor", {
+            direction = direction,
+        })
+    elseif self.state == State.PLAYER_FIELD then
+        msg.post("/board", "move_cursor", {
+            direction = direction,
+        })
+    end
+end
+
+---@param self Game
+function select_action(self)
+    if self.state == State.PLAYER_HAND then
+        msg.post("/hand_player", "select")
+    elseif self.state == State.PLAYER_FIELD then
+        msg.post("/board", "select")
+    end
+end
+
+---@param self Game
+function cancel_action(self)
+    if self.state == State.PLAYER_FIELD then
+        self.state = State.PLAYER_HAND
+        msg.post("/hand_player", "init", {
+            dont_reset_index = true,
+        })
+    end
+end
+
+---@param self Game
+function on_input(self, action_id, action)
+    if action.pressed and action_id == hash "move_up" then
+        move_cursor(self, "up")
+    elseif action.pressed and action_id == hash "move_down" then
+        move_cursor(self, "down")
+    elseif action.pressed and action_id == hash "move_left" then
+        move_cursor(self, "left")
+    elseif action.pressed and action_id == hash "move_right" then
+        move_cursor(self, "right")
+    elseif action.pressed and action_id == hash "select" then
+        select_action(self)
+    elseif action.pressed and action_id == hash "cancel" then
+        cancel_action(self)
+    end
+end
+
+---@param self Game
+function on_message(self, message_id, message, sender)
+    if message_id == hash "board_request_place_card" then
+        pprint "game: board_request_place_card"
+
+        pprint(self.field, message.row, message.col)
+        pprint(self.field[message.row])
+        if not self.field[message.row][message.col] then
+            msg.post(sender, "place_card", {
+                player_card = self.player_turn,
+            })
+        end
+    elseif message_id == hash "board_place_card_finished" then
+        pprint "game: board_place_card_finished"
+
+        self.field[message.row][message.col] = {
+            card = cards[message.card],
+            player = self.player_turn,
+        }
+
+        msg.post("/cursor", "hide")
+
+        if self.player_turn then
+            table.remove(self.player_hand, self.hand_selected)
+
+            msg.post("/hand_player", "remove_card", {
+                index = self.hand_selected,
+            })
+
+            self.hand_selected = nil
+        end
+    elseif message_id == hash "hand_selected_card" then
+        pprint "game: hand_selected_card"
+
+        self.state = State.PLAYER_FIELD
+
+        self.hand_selected = message.index
+
+        local card_id = self.player_hand[message.index]
+
+        print("SELECTED", card_id)
+
+        msg.post("/board", "init", {
+            selected_card = card_id,
+        })
+    elseif message_id == hash "hand_card_removed" then
+        pprint "game: hand_card_removed"
+
+        self.state = State.BATTLE_PHASE
+    end
+end

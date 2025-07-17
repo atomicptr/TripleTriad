@@ -1,14 +1,29 @@
 go.property("player_hand", false)
 go.property("cards_visible", true)
 
+---@class Hand
+---@field player_hand boolean
+---@field cards_visible boolean
+---@field cards hash[]
+---@field selected_index integer
+
+---@param self Hand
 function init(self)
     msg.post("#placeholder", "disable")
 
     self.cards = {}
-    self.selected_index = nil
+    self.selected_index = 1
 end
 
+---@param self Hand
+---@param cards integer[]
 function set_cards(self, cards)
+    -- delete old cards
+    for _, card_id in ipairs(self.cards) do
+        go.delete(card_id)
+    end
+
+    -- instanciate new cards
     for _, card_id in ipairs(cards) do
         local id = factory.create("#card_factory", nil, nil, {
             card_id = card_id,
@@ -21,6 +36,7 @@ function set_cards(self, cards)
     order_cards(self)
 end
 
+---@param self Hand
 function order_cards(self)
     local pos = go.get_position()
 
@@ -42,19 +58,72 @@ function order_cards(self)
     end
 end
 
+---@param self Hand
+---@param direction "up"|"down"
+local function apply_cursor_movement(self, direction)
+    if direction == "up" then
+        if self.selected_index == #self.cards then
+            self.selected_index = 1
+        else
+            self.selected_index = self.selected_index + 1
+        end
+    elseif direction == "down" then
+        if self.selected_index <= 1 then
+            self.selected_index = #self.cards
+        else
+            self.selected_index = self.selected_index - 1
+        end
+    end
+end
+
+---@param self Hand
+---@return vector3
+function selected_position(self)
+    local card = self.cards[self.selected_index]
+    return go.get_position(card)
+end
+
+---@param self Hand
+---@param message_id hash
+---@param message table
+---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "set_cards" then
+        pprint "hand: set_cards"
+
         self.selected_index = nil
         set_cards(self, message.cards)
-    elseif message_id == hash "select" then
-        self.selected_index = message.index
+    elseif message_id == hash "init" then
+        pprint "hand: init"
+
+        if not (message.dont_reset_index or false) then
+            self.selected_index = 1
+        end
+
+        msg.post("/cursor", "move", {
+            target_pos = selected_position(self),
+            skip_anim = true,
+        })
         order_cards(self)
+    elseif message_id == hash "move_cursor" then
+        pprint "hand: move_cursor"
+
+        apply_cursor_movement(self, message.direction)
+        order_cards(self)
+    elseif message_id == hash "select" then
+        pprint "hand: select"
+
+        msg.post(sender, "hand_selected_card", {
+            index = self.selected_index,
+        })
     elseif message_id == hash "remove_card" then
+        pprint "hand: remove_card"
+
         self.selected_index = nil
-
         local card = table.remove(self.cards, message.index)
-
         go.delete(card)
         order_cards(self)
+
+        msg.post(sender, "hand_card_removed")
     end
 end
