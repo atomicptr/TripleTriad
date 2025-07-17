@@ -1,4 +1,6 @@
 local cards = require "main.data.cards"
+
+local Rng = require "main.data.rng"
 local Grid = require "main.data.grid"
 
 local Pos = Grid.Pos
@@ -113,6 +115,8 @@ function update(self, dt)
     self.time = self.time + dt
 
     if self.state == State.GAME_START then
+        Rng.init()
+
         self.hand_selected = nil
 
         self.time = 0
@@ -122,8 +126,20 @@ function update(self, dt)
         msg.post("/board", "reset")
 
         -- TODO: figure out decks somehow
-        self.player_hand = { 110, 100, 73, 63, 15 }
-        self.enemy_hand = { 42, 2, 4, 10, 55 }
+        self.player_hand = {
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+        }
+        self.enemy_hand = {
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+            Rng.draw_index(cards),
+        }
 
         self.field = {
             [Pos.North] = {
@@ -151,10 +167,16 @@ function update(self, dt)
             cards = self.enemy_hand,
         })
 
-        -- TODO: do some more setup?
-        self.player_turn = true
-        self.state = State.PLAYER_HAND
-        msg.post("/hand_player", "init")
+        self.player_turn = Rng.flip_coin()
+        print("Player turn?", self.player_turn)
+
+        if self.player_turn then
+            self.state = State.PLAYER_HAND
+            msg.post("/hand_player", "init")
+            return
+        end
+
+        self.state = State.ENEMY_TURN
     elseif self.state == State.PLAYER_HAND then
         self.player_turn = true
     elseif self.state == State.PLAYER_FIELD then
