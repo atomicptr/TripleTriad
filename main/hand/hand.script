@@ -5,6 +5,7 @@ function init(self)
     msg.post("#placeholder", "disable")
 
     self.cards = {}
+    self.selected_index = nil
 end
 
 function set_cards(self, cards)
@@ -23,16 +24,34 @@ end
 function order_cards(self)
     local pos = go.get_position()
 
-    for _, card in ipairs(self.cards) do
-        go.set_position(pos, card)
+    for index, card in ipairs(self.cards) do
+        local x = 0
+
+        if self.selected_index == index then
+            x = -32
+
+            msg.post("/cursor", "move", {
+                target_pos = pos + vmath.vector3(x, 0, 0),
+                skip_anim = false,
+            })
+        end
+
+        go.set_position(pos + vmath.vector3(x, 0, 0), card)
+
         pos = pos + vmath.vector3(0, 100, -1)
     end
 end
 
 function on_message(self, message_id, message, sender)
     if message_id == hash "set_cards" then
+        self.selected_index = nil
         set_cards(self, message.cards)
+    elseif message_id == hash "select" then
+        self.selected_index = message.index
+        order_cards(self)
     elseif message_id == hash "remove_card" then
+        self.selected_index = nil
+
         local card = table.remove(self.cards, message.index)
 
         go.delete(card)

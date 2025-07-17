@@ -79,12 +79,11 @@ end
 function set_cursor_hand(self, index, skip_anim)
     self.hand_index = index
 
-    local target_pos = go.get_position "/hand_player" + vmath.vector3(0, (index - 1) * 100.0, 0.0)
-
-    msg.post("/cursor", "move", {
-        target_pos = target_pos,
-        skip_anim = skip_anim or false,
+    msg.post("/hand_player", "select", {
+        index = self.hand_index,
     })
+
+    local target_pos = go.get_position "/hand_player" + vmath.vector3(0, (index - 1) * 100.0, 0.0)
 end
 
 ---@param self Board
@@ -152,7 +151,15 @@ end
 
 ---@param self Board
 function cursor_down(self)
-    if self.state == State.PLAYER_FIELD then
+    if self.state == State.PLAYER_HAND then
+        if self.hand_index <= 1 then
+            self.hand_index = #self.player_hand
+        else
+            self.hand_index = self.hand_index - 1
+        end
+
+        set_cursor_hand(self, self.hand_index)
+    elseif self.state == State.PLAYER_FIELD then
         if self.cursor_row == N then
             set_cursor_field(self, C, self.cursor_col)
         elseif self.cursor_row == C then

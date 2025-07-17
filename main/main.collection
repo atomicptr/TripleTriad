@@ -14,7 +14,7 @@ instances {
   id: "hand_player"
   prototype: "/main/hand/hand.go"
   position {
-    x: 432.0
+    x: 464.0
     y: -200.0
     z: 20.0
   }
@@ -31,7 +31,7 @@ instances {
   id: "hand_enemy"
   prototype: "/main/hand/hand.go"
   position {
-    x: -432.0
+    x: -464.0
     y: -200.0
     z: 20.0
   }
