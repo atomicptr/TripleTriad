@@ -10,10 +10,14 @@ function init(self)
     self.speed = 0
     self.time = 0
     self.start_pos = go.get_position()
+
+    msg.post("#sprite", "disable")
 end
 
 function on_message(self, message_id, message, sender)
     if message_id == hash "move" then
+        msg.post("#sprite", "enable")
+
         self.target_pos = vmath.vector3(message.target_pos.x, message.target_pos.y, go.get_position().z)
         self.sender = sender
         self.speed = CURSOR_SPEED
@@ -25,6 +29,8 @@ function on_message(self, message_id, message, sender)
         end
 
         self.moving = true
+    elseif message_id == hash "hide" then
+        msg.post("#sprite", "disable")
     end
 end
 

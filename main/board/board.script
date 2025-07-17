@@ -1,3 +1,15 @@
+local cards = require "main.data.cards"
+
+---@enum State
+local State = {
+    GAME_START = 0,
+    PLAYER_HAND = 1,
+    PLAYER_FIELD = 2,
+    BATTLE_PHASE = 3,
+    ENEMY_TURN = 4,
+    GAME_END = 5,
+}
+
 local N = "north"
 local C = "center"
 local S = "south"
@@ -24,38 +36,62 @@ local card_pos = {
 
 ---@class Board
 ---@field field table
+---@field state State
+---@field hand_index integer
+---@field selected_card integer|nil
+---@field player_hand integer[]
+---@field enemy_hand integer[]
 ---@field cursor_moving boolean
+---@field player_turn boolean
 ---@field cursor_row string
 ---@field cursor_col string
 
 ---@param self Board
 function init(self)
+    self.state = State.GAME_START
+
+    -- reset field
     self.field = {
         [N] = { [W] = nil, [C] = nil, [S] = nil },
         [C] = { [W] = nil, [C] = nil, [S] = nil },
         [S] = { [W] = nil, [C] = nil, [S] = nil },
     }
 
+    -- set up hand
+    self.selected_card = nil
+    self.hand_index = 1
+    self.player_hand = { 110, 100, 73, 63, 15 }
+    self.enemy_hand = { 42, 2, 4, 10, 55 }
+
     msg.post("/hand_player", "set_cards", {
-        cards = { 110, 100, 73, 63, 15 },
+        cards = self.player_hand,
     })
 
-    msg.post("/hand_ai", "set_cards", {
-        cards = { 42, 2, 4, 10, 55 },
+    msg.post("/hand_enemy", "set_cards", {
+        cards = self.enemy_hand,
     })
 
     self.cursor_moving = false
 
-    set_cursor(self, N, E, true)
-
     msg.post(".", "acquire_input_focus")
+end
+
+function set_cursor_hand(self, index, skip_anim)
+    self.hand_index = index
+
+    local target_pos = go.get_position "/hand_player" + vmath.vector3(0, (index - 1) * 100.0, 0.0)
+
+    msg.post("/cursor", "move", {
+        target_pos = target_pos,
+        skip_anim = skip_anim or false,
+    })
 end
 
 ---@param self Board
 ---@param row string
 ---@param col string
 ---@param skip_anim boolean|nil
-function set_cursor(self, row, col, skip_anim)
+function set_cursor_field(self, row, col, skip_anim)
     self.cursor_row = row
     self.cursor_col = col
 
@@ -67,44 +103,114 @@ function set_cursor(self, row, col, skip_anim)
     })
 end
 
+---@param self Board
 function cursor_left(self)
-    if self.cursor_col == W then
-        set_cursor(self, self.cursor_row, E)
-    elseif self.cursor_col == C then
-        set_cursor(self, self.cursor_row, W)
-    else
-        set_cursor(self, self.cursor_row, C)
+    if self.state == State.PLAYER_FIELD then
+        if self.cursor_col == W then
+            set_cursor_field(self, self.cursor_row, E)
+        elseif self.cursor_col == C then
+            set_cursor_field(self, self.cursor_row, W)
+        else
+            set_cursor_field(self, self.cursor_row, C)
+        end
     end
 end
 
+---@param self Board
 function cursor_right(self)
-    if self.cursor_col == W then
-        set_cursor(self, self.cursor_row, C)
-    elseif self.cursor_col == C then
-        set_cursor(self, self.cursor_row, E)
-    else
-        set_cursor(self, self.cursor_row, W)
+    if self.state == State.PLAYER_FIELD then
+        if self.cursor_col == W then
+            set_cursor_field(self, self.cursor_row, C)
+        elseif self.cursor_col == C then
+            set_cursor_field(self, self.cursor_row, E)
+        else
+            set_cursor_field(self, self.cursor_row, W)
+        end
     end
 end
 
+---@param self Board
 function cursor_up(self)
-    if self.cursor_row == N then
-        set_cursor(self, S, self.cursor_col)
-    elseif self.cursor_row == C then
-        set_cursor(self, N, self.cursor_col)
-    else
-        set_cursor(self, C, self.cursor_col)
+    if self.state == State.PLAYER_HAND then
+        if self.hand_index == #self.player_hand then
+            self.hand_index = 1
+        else
+            self.hand_index = self.hand_index + 1
+        end
+
+        set_cursor_hand(self, self.hand_index)
+    elseif self.state == State.PLAYER_FIELD then
+        if self.cursor_row == N then
+            set_cursor_field(self, S, self.cursor_col)
+        elseif self.cursor_row == C then
+            set_cursor_field(self, N, self.cursor_col)
+        else
+            set_cursor_field(self, C, self.cursor_col)
+        end
     end
 end
 
+---@param self Board
 function cursor_down(self)
-    if self.cursor_row == N then
-        set_cursor(self, C, self.cursor_col)
-    elseif self.cursor_row == C then
-        set_cursor(self, S, self.cursor_col)
-    else
-        set_cursor(self, N, self.cursor_col)
+    if self.state == State.PLAYER_FIELD then
+        if self.cursor_row == N then
+            set_cursor_field(self, C, self.cursor_col)
+        elseif self.cursor_row == C then
+            set_cursor_field(self, S, self.cursor_col)
+        else
+            set_cursor_field(self, N, self.cursor_col)
+        end
     end
+end
+
+---@param self Board
+function cursor_select(self)
+    if self.state == State.PLAYER_HAND then
+        self.selected_card = self.player_hand[self.hand_index]
+        self.state = State.PLAYER_FIELD
+
+        set_cursor_field(self, C, C)
+    elseif self.state == State.PLAYER_FIELD then
+        if self.field[self.cursor_row][self.cursor_col] then
+            return
+        end
+
+        place_card(self, self.cursor_row, self.cursor_col, self.selected_card)
+
+        msg.post("/hand_player", "remove_card", {
+            index = self.hand_index,
+        })
+        table.remove(self.player_hand, self.hand_index)
+        self.hand_index = 1
+        self.selected_card = nil
+
+        msg.post("/cursor", "hide")
+
+        self.state = State.BATTLE_PHASE
+    end
+end
+
+---@param self Board
+function cursor_cancel(self)
+    if self.state == State.PLAYER_FIELD then
+        self.selected_card = nil
+        set_cursor_hand(self, 1)
+
+        self.state = State.PLAYER_HAND
+    end
+end
+
+---@param self Board
+---@param row string
+---@param col string
+---@param card_id integer
+function place_card(self, row, col, card_id)
+    self.field[row][col] = cards[card_id]
+
+    factory.create("#card_factory", card_pos[row][col], nil, {
+        card_id = card_id,
+        player_card = true,
+    })
 end
 
 ---@param self Board
@@ -123,29 +229,71 @@ function on_input(self, action_id, action)
         cursor_left(self)
     elseif action.pressed and action_id == hash "move_right" then
         cursor_right(self)
-    end
-
-    if action.pressed and action_id == hash "select" then
-        if not self.field[self.cursor_row][self.cursor_col] then
-            msg.post(".", "spawn_card", {
-                row = self.cursor_row,
-                col = self.cursor_col,
-                card_id = 55,
-            })
-        end
+    elseif action.pressed and action_id == hash "select" then
+        cursor_select(self)
+    elseif action.pressed and action_id == hash "cancel" then
+        cursor_cancel(self)
     end
 end
 
+---@param self Board
+---@param message_id hash
+---@param message table
+---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "spawn_card" then
-        self.field[message.row][message.col] = message.card_id
-        factory.create("#card_factory", card_pos[message.row][message.col], nil, {
-            card_id = message.card_id,
-            player_card = true,
-        })
     end
 
     if message_id == hash "cursor_done_moving" then
         self.cursor_moving = false
+    end
+end
+
+function change_state_player_hand(self)
+    self.player_turn = true
+    self.state = State.PLAYER_HAND
+    set_cursor_hand(self, 1, true)
+end
+
+---@param self Board
+---@param dt float
+function update(self, dt)
+    if self.state == State.GAME_START then
+        change_state_player_hand(self)
+    elseif self.state == State.PLAYER_HAND then
+    elseif self.state == State.PLAYER_FIELD then
+    elseif self.state == State.BATTLE_PHASE then
+        msg.post("/cursor", "hide")
+
+        -- TODO: evaluate card effects
+
+        if #self.player_hand == 0 and #self.enemy_hand == 0 then
+            self.state = State.GAME_END
+            return
+        end
+
+        if self.player_turn then
+            self.state = State.ENEMY_TURN
+
+            -- enemy has no cards for some reason? Go to player
+            if #self.enemy_hand == 0 then
+                change_state_player_hand(self)
+            end
+        else
+            change_state_player_hand(self)
+
+            -- player has no cards for some reason? Go to enemy
+            if #self.player_hand == 0 then
+                msg.post("/cursor", "hide")
+                self.state = State.ENEMY_TURN
+            end
+        end
+    elseif self.state == State.ENEMY_TURN then
+        self.player_turn = false
+
+        -- TODO: play card
+        self.state = State.BATTLE_PHASE
+    elseif self.state == State.GAME_END then
+        print "Game End"
     end
 end

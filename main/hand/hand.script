@@ -4,18 +4,27 @@ go.property("cards_visible", true)
 function init(self)
     msg.post("#placeholder", "disable")
 
-    self.index = nil
+    self.cards = {}
 end
 
 function set_cards(self, cards)
-    local pos = go.get_position()
-
     for _, card_id in ipairs(cards) do
-        factory.create("#card_factory", pos, nil, {
+        local id = factory.create("#card_factory", nil, nil, {
             card_id = card_id,
             player_card = self.player_hand,
             visible = self.cards_visible,
         })
+        table.insert(self.cards, id)
+    end
+
+    order_cards(self)
+end
+
+function order_cards(self)
+    local pos = go.get_position()
+
+    for _, card in ipairs(self.cards) do
+        go.set_position(pos, card)
         pos = pos + vmath.vector3(0, 100, -1)
     end
 end
@@ -23,5 +32,10 @@ end
 function on_message(self, message_id, message, sender)
     if message_id == hash "set_cards" then
         set_cards(self, message.cards)
+    elseif message_id == hash "remove_card" then
+        local card = table.remove(self.cards, message.index)
+
+        go.delete(card)
+        order_cards(self)
     end
 end
