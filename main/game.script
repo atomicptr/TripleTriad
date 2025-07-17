@@ -404,6 +404,8 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "board_finished_flipping" then
         self.flipping = false
         end_battle_phase(self)
+    elseif message_id == hash "card_flipped" then
+        play_sound "capture"
     end
 end
 

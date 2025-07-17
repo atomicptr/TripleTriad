@@ -103,6 +103,8 @@ function on_message(self, message_id, message, sender)
         self.player_card = not self.player_card
         set_background(self)
 
+        msg.post("/game", "card_flipped")
+
         -- TODO: after animation is done, call back
         msg.post("/board", "card_finished_flipping")
     end
