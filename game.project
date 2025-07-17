@@ -1,9 +1,6 @@
 [bootstrap]
 main_collection = /main/main.collectionc
 
-[script]
-shared_state = 1
-
 [display]
 width = 1200
 height = 700
@@ -13,7 +10,8 @@ high_dpi = 1
 input_method = HiddenInputField
 
 [html5]
-scale_mode = stretch
+scale_mode = fit
+cssfile = /builtins/manifests/web/dark_theme.css
 
 [project]
 title = TripleTriad
