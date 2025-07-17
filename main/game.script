@@ -30,6 +30,8 @@ function init(self)
     self.state = State.GAME_START
     self.field = nil
 
+    msg.post("#music", "play_sound", { gain = 0.2 })
+
     msg.post(".", "acquire_input_focus")
 end
 
@@ -130,10 +132,14 @@ function move_cursor(self, direction)
         msg.post("/hand_player", "move_cursor", {
             direction = direction,
         })
+
+        play_sound "select"
     elseif self.state == State.PLAYER_FIELD then
         msg.post("/board", "move_cursor", {
             direction = direction,
         })
+
+        play_sound "select"
     end
 end
 
@@ -153,6 +159,8 @@ function cancel_action(self)
         msg.post("/hand_player", "init", {
             dont_reset_index = true,
         })
+
+        play_sound "cancel"
     end
 end
 
@@ -183,12 +191,13 @@ function on_message(self, message_id, message, sender)
     if message_id == hash "board_request_place_card" then
         pprint "game: board_request_place_card"
 
-        pprint(self.field, message.row, message.col)
-        pprint(self.field[message.row])
         if not self.field[message.row][message.col] then
             msg.post(sender, "place_card", {
                 player_card = self.player_turn,
             })
+            return
+        else
+            play_sound "forbidden"
         end
     elseif message_id == hash "board_place_card_finished" then
         pprint "game: board_place_card_finished"
@@ -209,6 +218,8 @@ function on_message(self, message_id, message, sender)
 
             self.hand_selected = nil
         end
+
+        play_sound "card"
     elseif message_id == hash "hand_selected_card" then
         pprint "game: hand_selected_card"
 
@@ -228,4 +239,9 @@ function on_message(self, message_id, message, sender)
 
         self.state = State.BATTLE_PHASE
     end
+end
+
+---@param name string
+function play_sound(name)
+    msg.post("/sfx#" .. name, "play_sound", { gain = 0.2 })
 end
