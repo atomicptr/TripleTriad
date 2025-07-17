@@ -116,6 +116,13 @@ function on_message(self, message_id, message, sender)
         msg.post(sender, "hand_selected_card", {
             index = self.selected_index,
         })
+    elseif message_id == hash "enemy_select" then
+        pprint "hand: enemy_select"
+
+        self.selected_index = message.index
+        order_cards(self)
+
+        msg.post(sender, "hand_enemy_selected_card")
     elseif message_id == hash "remove_card" then
         pprint "hand: remove_card"
 

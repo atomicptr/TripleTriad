@@ -7,6 +7,10 @@ local Pos = Grid.Pos
 ---@field card Card
 ---@field player boolean
 
+---@class EnemyPlan
+---@field hand_index integer
+---@field target_pos { row: Pos, col: Pos }
+
 ---@enum State
 local State = {
     GAME_START = 0,
@@ -23,6 +27,7 @@ local State = {
 ---@field player_turn boolean
 ---@field player_hand integer[]
 ---@field enemy_hand integer[]
+---@field enemy_plan EnemyPlan|nil
 ---@field hand_selected integer|nil
 
 ---@param self Game
@@ -114,8 +119,30 @@ function update(self, dt)
     elseif self.state == State.ENEMY_TURN then
         self.player_turn = false
 
-        -- TODO: to ai stuff, play card
-        self.state = State.BATTLE_PHASE
+        if self.enemy_plan then
+            -- continue the plan
+            return
+        end
+
+        -- big brain ai
+        -- TODO: make plan, store plan, execute plan
+        for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
+            for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
+                if not self.field[row][col] then
+                    -- found an empty spot, just place the first card, lmao
+
+                    self.enemy_plan = {
+                        hand_index = 1,
+                        target_pos = { row = row, col = col },
+                    }
+
+                    msg.post("/hand_enemy", "enemy_select", {
+                        index = self.enemy_plan.hand_index,
+                    })
+                    return
+                end
+            end
+        end
     elseif self.state == State.GAME_END then
         print "Game End"
     end
@@ -217,6 +244,15 @@ function on_message(self, message_id, message, sender)
             })
 
             self.hand_selected = nil
+        else
+            table.remove(self.enemy_hand, self.enemy_plan.hand_index)
+
+            msg.post("/hand_enemy", "remove_card", {
+                index = self.enemy_plan.hand_index,
+            })
+
+            self.enemy_plan = nil
+            self.hand_selected = nil
         end
 
         play_sound "card"
@@ -229,10 +265,21 @@ function on_message(self, message_id, message, sender)
 
         local card_id = self.player_hand[message.index]
 
-        print("SELECTED", card_id)
-
         msg.post("/board", "init", {
             selected_card = card_id,
+        })
+    elseif message_id == hash "hand_enemy_selected_card" then
+        pprint "game: hand_enemy_selected_card"
+
+        assert(self.enemy_plan ~= nil)
+        self.hand_selected = self.enemy_plan.hand_index
+
+        local card_id = self.enemy_hand[self.enemy_plan.hand_index]
+
+        msg.post("/board", "enemy_place", {
+            selected_card = card_id,
+            row = self.enemy_plan.target_pos.row,
+            col = self.enemy_plan.target_pos.col,
         })
     elseif message_id == hash "hand_card_removed" then
         pprint "game: hand_card_removed"

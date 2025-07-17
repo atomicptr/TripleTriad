@@ -126,6 +126,13 @@ function on_message(self, message_id, message, sender)
         pprint "board: place_card"
 
         place_card(self, message.player_card)
+    elseif message_id == hash "enemy_place" then
+        pprint "board: enemy_place"
+
+        self.selected_card = message.selected_card
+
+        set_cursor(self, message.row, message.col, true)
+        place_card(self, false)
     elseif message_id == hash "move_cursor" then
         pprint "board: move_cursor"
 
