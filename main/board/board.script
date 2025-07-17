@@ -26,13 +26,37 @@ local card_pos = {
 ---@field cursor_moving boolean
 ---@field cursor_row Pos
 ---@field cursor_col Pos
+---@field cards table<Pos, table<Pos, userdata|nil>>
+---@field cards_to_flip OwnedCard[]
 
 ---@param self Board
-function init(self)
+local function reset(self)
     self.selected_card = nil
     self.cursor_row = Pos.Center
     self.cursor_col = Pos.Center
     self.cursor_moving = false
+    self.cards = {
+        [Pos.North] = {
+            [Pos.West] = nil,
+            [Pos.Center] = nil,
+            [Pos.East] = nil,
+        },
+        [Pos.Center] = {
+            [Pos.West] = nil,
+            [Pos.Center] = nil,
+            [Pos.East] = nil,
+        },
+        [Pos.South] = {
+            [Pos.West] = nil,
+            [Pos.Center] = nil,
+            [Pos.East] = nil,
+        },
+    }
+end
+
+---@param self Board
+function init(self)
+    reset(self)
 end
 
 ---@param self Board
@@ -90,10 +114,12 @@ end
 ---@param self Board
 ---@param player_card boolean
 function place_card(self, player_card)
-    factory.create("#card_factory", card_pos[self.cursor_row][self.cursor_col], nil, {
+    local id = factory.create("#card_factory", card_pos[self.cursor_row][self.cursor_col], nil, {
         card_id = self.selected_card,
         player_card = player_card,
     })
+
+    self.cards[self.cursor_row][self.cursor_col] = id
 
     msg.post("/game", "board_place_card_finished", {
         card = self.selected_card,
@@ -104,12 +130,26 @@ function place_card(self, player_card)
     self.selected_card = nil
 end
 
+local function flip_card(self)
+    local card = table.remove(self.cards_to_flip)
+    local id = self.cards[card.row][card.col]
+
+    if not id then
+        return
+    end
+
+    msg.post(id, "flip")
+end
+
 ---@param self Board
 ---@param message_id hash
 ---@param message table
 ---@param sender hash
 function on_message(self, message_id, message, sender)
-    if message_id == hash "init" then
+    if message_id == hash "reset" then
+        pprint "board: reset"
+        reset(self)
+    elseif message_id == hash "init" then
         pprint "board: init"
 
         self.selected_card = message.selected_card
@@ -137,6 +177,18 @@ function on_message(self, message_id, message, sender)
         pprint "board: move_cursor"
 
         apply_cursor_movement(self, message.direction)
+    elseif message_id == hash "flip_cards" then
+        pprint("board: flip_cards", message.cards)
+
+        self.cards_to_flip = message.cards
+        flip_card(self)
+    elseif message_id == hash "card_finished_flipping" then
+        if #self.cards_to_flip == 0 then
+            msg.post("/game", "board_finished_flipping")
+            return
+        end
+
+        flip_card(self)
     elseif message_id == hash "cursor_done_moving" then
         self.cursor_moving = false
     end

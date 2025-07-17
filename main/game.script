@@ -6,10 +6,18 @@ local Pos = Grid.Pos
 ---@class OwnedCard
 ---@field card Card
 ---@field player boolean
+---@field row Pos
+---@field col Pos
 
 ---@class EnemyPlan
 ---@field hand_index integer
 ---@field target_pos { row: Pos, col: Pos }
+
+---@class Action
+---@field row Pos
+---@field col Pos
+---@field card Card
+---@field player boolean
 
 ---@enum State
 local State = {
@@ -29,11 +37,15 @@ local State = {
 ---@field enemy_hand integer[]
 ---@field enemy_plan EnemyPlan|nil
 ---@field hand_selected integer|nil
+---@field flipping boolean
+---@field action_log Action[]
+---@field time float
 
 ---@param self Game
 function init(self)
     self.state = State.GAME_START
     self.field = nil
+    self.time = 0
 
     msg.post("#music", "play_sound", { gain = 0.2 })
 
@@ -41,12 +53,73 @@ function init(self)
 end
 
 ---@param self Game
+---@return { player: integer, enemy: integer }
+local function count_score(self)
+    local score = {
+        player = 0,
+        enemy = 0,
+    }
+
+    for _, row in pairs(self.field) do
+        for _, card in pairs(row) do
+            if card then
+                if card.player then
+                    score.player = score.player + 1
+                else
+                    score.enemy = score.enemy + 1
+                end
+            end
+        end
+    end
+
+    return score
+end
+
+---@param self Game
+local function end_battle_phase(self)
+    if #self.player_hand == 0 or #self.enemy_hand == 0 then
+        self.state = State.GAME_END
+        return
+    end
+
+    if self.player_turn then
+        self.state = State.ENEMY_TURN
+
+        -- enemy has no cards for some reason? Go to player
+        if #self.enemy_hand == 0 then
+            msg.post("/hand_player", "init")
+            self.state = State.PLAYER_HAND
+            return
+        end
+
+        -- TODO: send message to enemy something
+    else
+        self.state = State.PLAYER_HAND
+
+        -- player has no cards for some reason? Go to enemy
+        if #self.player_hand == 0 then
+            msg.post("/cursor", "hide")
+            self.state = State.ENEMY_TURN
+            return
+        end
+
+        msg.post("/hand_player", "init")
+    end
+end
+
+---@param self Game
 ---@param dt float
 function update(self, dt)
-    print(self.state)
+    self.time = self.time + dt
 
     if self.state == State.GAME_START then
         self.hand_selected = nil
+
+        self.time = 0
+        self.action_log = {}
+        self.flipping = false
+
+        msg.post("/board", "reset")
 
         -- TODO: figure out decks somehow
         self.player_hand = { 110, 100, 73, 63, 15 }
@@ -86,36 +159,57 @@ function update(self, dt)
         self.player_turn = true
     elseif self.state == State.PLAYER_FIELD then
     elseif self.state == State.BATTLE_PHASE then
-        -- TODO: evaluate card effects
-
-        if #self.player_hand == 0 and #self.enemy_hand == 0 then
-            self.state = State.GAME_END
+        if self.flipping then
             return
         end
 
-        if self.player_turn then
-            self.state = State.ENEMY_TURN
+        local last_action = self.action_log[#self.action_log]
 
-            -- enemy has no cards for some reason? Go to player
-            if #self.enemy_hand == 0 then
-                msg.post("/hand_player", "init")
-                self.state = State.PLAYER_HAND
-                return
+        local new_card = last_action.card
+
+        local orthogonal_cards = get_orthogonal_cards(self, last_action.row, last_action.col)
+
+        ---@type OwnedCard[]
+        local flip_cards = {}
+
+        for _, c in ipairs(orthogonal_cards) do
+            -- only evaluate cards that aren't "your own"
+            if c.value.player ~= self.player_turn then
+                local enemy_card = c.value.card
+
+                -- TODO: handle SAME ruleset
+                if c.direction == "up" and new_card.top > enemy_card.bottom then
+                    table.insert(flip_cards, c.value)
+                elseif c.direction == "down" and new_card.bottom > enemy_card.top then
+                    table.insert(flip_cards, c.value)
+                elseif c.direction == "left" and new_card.left > enemy_card.right then
+                    table.insert(flip_cards, c.value)
+                elseif c.direction == "right" and new_card.right > enemy_card.left then
+                    table.insert(flip_cards, c.value)
+                end
             end
-
-            -- TODO: send message to enemy something
-        else
-            self.state = State.PLAYER_HAND
-
-            -- player has no cards for some reason? Go to enemy
-            if #self.player_hand == 0 then
-                msg.post("/cursor", "hide")
-                self.state = State.ENEMY_TURN
-                return
-            end
-
-            msg.post("/hand_player", "init")
         end
+
+        if #flip_cards > 0 then
+            self.flipping = true
+
+            -- flip in data model
+            for _, card in ipairs(flip_cards) do
+                self.field[card.row][card.col].player = not self.field[card.row][card.col].player
+            end
+
+            msg.post("/board", "flip_cards", {
+                cards = flip_cards,
+                player = self.player_turn,
+            })
+
+            return
+        end
+
+        -- TODO: handle effects or something
+
+        -- ending battle phase
+        end_battle_phase(self)
     elseif self.state == State.ENEMY_TURN then
         self.player_turn = false
 
@@ -145,6 +239,17 @@ function update(self, dt)
         end
     elseif self.state == State.GAME_END then
         print "Game End"
+        local score = count_score(self)
+
+        print("Player: ", score.player, "Enemy: ", score.enemy)
+
+        if score.player == score.enemy then
+            print "DRAW"
+        elseif score.player > score.enemy then
+            print "WIN"
+        else
+            print "LOST"
+        end
     end
 end
 
@@ -232,9 +337,20 @@ function on_message(self, message_id, message, sender)
         self.field[message.row][message.col] = {
             card = cards[message.card],
             player = self.player_turn,
+            row = message.row,
+            col = message.col,
         }
 
         msg.post("/cursor", "hide")
+
+        local action = {
+            row = message.row,
+            col = message.col,
+            card = cards[message.card],
+            player = self.player_turn,
+        }
+
+        table.insert(self.action_log, action)
 
         if self.player_turn then
             table.remove(self.player_hand, self.hand_selected)
@@ -285,7 +401,37 @@ function on_message(self, message_id, message, sender)
         pprint "game: hand_card_removed"
 
         self.state = State.BATTLE_PHASE
+    elseif message_id == hash "board_finished_flipping" then
+        self.flipping = false
+        end_battle_phase(self)
     end
+end
+
+---@param self Game
+---@param row Pos
+---@param col Pos
+---@return { value: OwnedCard, direction: "up"|"down"|"left"|"right" }[]
+function get_orthogonal_cards(self, row, col)
+    local ortho_cards = {}
+
+    for _, pos in ipairs(Grid.orthogonal(row, col)) do
+        local card = self.field[pos.row][pos.col]
+
+        if card then
+            table.insert(ortho_cards, {
+                value = card,
+                direction = pos.direction,
+            })
+        end
+    end
+
+    return ortho_cards
+end
+
+---@param self Game
+---@return Action
+function last_action(self)
+    return self.action_log[#self.action_log]
 end
 
 ---@param name string
