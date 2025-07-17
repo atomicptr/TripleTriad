@@ -34,6 +34,7 @@ function init(self)
 end
 
 ---@param self Game
+---@param dt float
 function update(self, dt)
     print(self.state)
 
@@ -119,6 +120,7 @@ function update(self, dt)
 end
 
 ---@param self Game
+---@param direction "up"|"down"|"left"|"right"
 function move_cursor(self, direction)
     if self.state == State.PLAYER_HAND then
         if direction == "left" or direction == "right" then
@@ -155,6 +157,8 @@ function cancel_action(self)
 end
 
 ---@param self Game
+---@param action_id hash
+---@param action table
 function on_input(self, action_id, action)
     if action.pressed and action_id == hash "move_up" then
         move_cursor(self, "up")
@@ -172,6 +176,9 @@ function on_input(self, action_id, action)
 end
 
 ---@param self Game
+---@param message_id hash
+---@param message table
+---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "board_request_place_card" then
         pprint "game: board_request_place_card"

@@ -1,4 +1,3 @@
-local cards = require "main.data.cards"
 local Grid = require "main.data.grid"
 
 local Pos = Grid.Pos

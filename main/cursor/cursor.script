@@ -3,6 +3,15 @@ local CURSOR_SPEED = 15
 local DURATION = 0.5
 local DISTANCE = 20.0
 
+---@class Cursor
+---@field moving boolean
+---@field target_pos vector3|nil
+---@field sender hash
+---@field speed integer
+---@field time float
+---@field start_pos vector3
+
+---@param self Cursor
 function init(self)
     self.moving = false
     self.target_pos = nil
@@ -14,6 +23,10 @@ function init(self)
     msg.post("#sprite", "disable")
 end
 
+---@param self Cursor
+---@param message_id hash
+---@param message table
+---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "move" then
         msg.post("#sprite", "enable")
@@ -34,6 +47,8 @@ function on_message(self, message_id, message, sender)
     end
 end
 
+---@param self Cursor
+---@param dt float
 function update(self, dt)
     self.time = self.time + dt
 
