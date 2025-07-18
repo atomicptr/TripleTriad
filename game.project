@@ -15,7 +15,11 @@ cssfile = /builtins/manifests/web/dark_theme.css
 
 [project]
 title = TripleTriad
+developer = atomicptr.dev
 
 [sprite]
 max_count = 256
+
+[native_extension]
+app_manifest = /game.appmanifest
 
