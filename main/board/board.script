@@ -1,4 +1,4 @@
-local Grid = require "main.data.grid"
+local Grid = require "modules.grid"
 
 local Pos = Grid.Pos
 

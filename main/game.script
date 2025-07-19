@@ -1,19 +1,10 @@
 local cards = require "main.data.cards"
 
-local Rng = require "main.data.rng"
-local Grid = require "main.data.grid"
+local AI = require "main.ai.smart"
+local Rng = require "modules.rng"
+local Grid = require "modules.grid"
 
 local Pos = Grid.Pos
-
----@class OwnedCard
----@field card Card
----@field player boolean
----@field row Pos
----@field col Pos
-
----@class EnemyPlan
----@field hand_index integer
----@field target_pos { row: Pos, col: Pos }
 
 ---@class Action
 ---@field row Pos
@@ -240,25 +231,12 @@ function update(self, dt)
             return
         end
 
-        -- big brain ai
-        -- TODO: make plan, store plan, execute plan
-        for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
-            for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
-                if not self.field[row][col] then
-                    -- found an empty spot, just place the first card, lmao
+        self.enemy_plan = AI.calculate(self.enemy_hand, self.field)
+        assert(self.enemy_plan ~= nil)
 
-                    self.enemy_plan = {
-                        hand_index = 1,
-                        target_pos = { row = row, col = col },
-                    }
-
-                    msg.post("/hand_enemy", "enemy_select", {
-                        index = self.enemy_plan.hand_index,
-                    })
-                    return
-                end
-            end
-        end
+        msg.post("/hand_enemy", "enemy_select", {
+            index = self.enemy_plan.hand_index,
+        })
     elseif self.state == State.GAME_END then
         print "Game End"
         local score = count_score(self)
