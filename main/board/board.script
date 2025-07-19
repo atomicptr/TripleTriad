@@ -31,6 +31,16 @@ local card_pos = {
 
 ---@param self Board
 local function reset(self)
+    if self.cards then
+        for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
+            for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
+                if self.cards[row][col] then
+                    go.delete(self.cards[row][col])
+                end
+            end
+        end
+    end
+
     self.selected_card = nil
     self.cursor_row = Pos.Center
     self.cursor_col = Pos.Center

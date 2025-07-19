@@ -1,0 +1,10 @@
+images {
+  image: "/assets/textures/result-win.png"
+}
+images {
+  image: "/assets/textures/result-draw.png"
+}
+images {
+  image: "/assets/textures/result-lose.png"
+}
+extrude_borders: 2

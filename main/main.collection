@@ -36,6 +36,13 @@ instances {
     z: 20.0
   }
 }
+instances {
+  id: "gameover"
+  prototype: "/main/gameover/gameover.go"
+  position {
+    z: 99.0
+  }
+}
 scale_along_z: 0
 embedded_instances {
   id: "camera"

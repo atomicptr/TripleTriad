@@ -1,0 +1,41 @@
+function init(self)
+    self.score_player = 0
+    self.score_enemy = 0
+    self.updated_score = false
+
+    msg.post("#bg", "disable")
+    msg.post("#text", "disable")
+    msg.post("#restart", "disable")
+end
+
+---@param self table
+---@param message_id hash
+---@param message table
+---@param sender hash
+function on_message(self, message_id, message, sender)
+    if message_id == hash "gameover" then
+        if not self.updated_score then
+            if message.result == "win" then
+                self.score_player = self.score_player + 1
+            elseif message.result == "lose" then
+                self.score_enemy = self.score_enemy + 1
+            end
+
+            self.updated_score = true
+        end
+
+        msg.post("#bg", "enable")
+        msg.post("#restart", "enable")
+        sprite.play_flipbook("#text", "result-" .. message.result)
+        msg.post("#text", "enable")
+
+        label.set_text("#score_player", self.score_player)
+        label.set_text("#score_enemy", self.score_enemy)
+    elseif message_id == hash "restart" then
+        msg.post("#bg", "disable")
+        msg.post("#text", "disable")
+        msg.post("#restart", "disable")
+
+        self.updated_score = false
+    end
+end

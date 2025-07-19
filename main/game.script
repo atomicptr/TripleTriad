@@ -238,17 +238,16 @@ function update(self, dt)
             index = self.enemy_plan.hand_index,
         })
     elseif self.state == State.GAME_END then
-        print "Game End"
         local score = count_score(self)
 
-        print("Player: ", score.player, "Enemy: ", score.enemy)
+        pprint("Score: ", score)
 
         if score.player == score.enemy then
-            print "DRAW"
+            msg.post("/gameover", "gameover", { result = "draw" })
         elseif score.player > score.enemy then
-            print "WIN"
+            msg.post("/gameover", "gameover", { result = "win" })
         else
-            print "LOST"
+            msg.post("/gameover", "gameover", { result = "lose" })
         end
     end
 end
@@ -281,6 +280,10 @@ function select_action(self)
         msg.post("/hand_player", "select")
     elseif self.state == State.PLAYER_FIELD then
         msg.post("/board", "select")
+    elseif self.state == State.GAME_END then
+        self.state = State.GAME_START
+
+        msg.post("/gameover", "restart")
     end
 end
 

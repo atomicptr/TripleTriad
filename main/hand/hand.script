@@ -91,7 +91,14 @@ function on_message(self, message_id, message, sender)
     if message_id == hash "set_cards" then
         pprint "hand: set_cards"
 
+        if self.cards then
+            for _, card in ipairs(self.cards) do
+                go.delete(card)
+            end
+        end
+
         self.selected_index = nil
+        self.cards = {}
         set_cards(self, message.cards)
     elseif message_id == hash "init" then
         pprint "hand: init"
