@@ -234,9 +234,12 @@ function update(self, dt)
         self.enemy_plan = AI.calculate(self.enemy_hand, self.field)
         assert(self.enemy_plan ~= nil)
 
-        msg.post("/hand_enemy", "enemy_select", {
-            index = self.enemy_plan.hand_index,
-        })
+        -- wait a bit
+        timer.delay(0.1, false, function()
+            msg.post("/hand_enemy", "enemy_select", {
+                index = self.enemy_plan.hand_index,
+            })
+        end)
     elseif self.state == State.GAME_END then
         local score = count_score(self)
 
