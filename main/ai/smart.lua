@@ -10,7 +10,7 @@ local M = {}
 local function is_board_empty(board)
     for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
         for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
-            if board[row][col] then
+            if board[row][col].card then
                 return false
             end
         end
@@ -38,25 +38,31 @@ end
 
 ---@param hand integer[]
 ---@param sides ("top"|"bottom"|"left"|"right")[]
-local function find_max_sum_from_hand(hand, sides)
+---@param pos BoardPos
+---@param board GameField
+---@param rules Ruleset[]
+---@return { index: integer, sum: integer }
+local function find_max_sum_from_hand_for_position(hand, sides, pos, board, rules)
     local sums = {}
 
     for index, card_id in ipairs(hand) do
         local card = cards[card_id]
+        local card_vals = combat.card_values(card, board[pos.row][pos.col].element, rules)
 
         sums[index] = 0
 
         for _, side in ipairs(sides) do
-            sums[index] = sums[index] + card[side]
+            sums[index] = sums[index] + card_vals[side]
         end
     end
 
-    local max_index = 1
+    local max_index = nil
     local max_value = 0
 
     for index, sum in ipairs(sums) do
         if sum > max_value then
             max_index = index
+            max_value = sum
         end
     end
 
@@ -75,44 +81,43 @@ local function defensive_move(hand, board, rules)
         return nil
     end
 
-    local nw = find_max_sum_from_hand(hand, { "top", "left" })
-    local ne = find_max_sum_from_hand(hand, { "top", "right" })
-    local sw = find_max_sum_from_hand(hand, { "bottom", "left" })
-    local se = find_max_sum_from_hand(hand, { "bottom", "right" })
+    local best_pos = nil
+    local best_hand_index = nil
+    local best_value = 0
 
-    -- TODO: take element into account
-    -- TODO: find best option
-    local corner = Rng.draw(corners)
+    for _, corner in ipairs(corners) do
+        local p1 = nil
+        local p2 = nil
 
-    if not corner then
+        if corner.row == Pos.North then
+            p1 = "bottom"
+        else
+            p1 = "top"
+        end
+
+        if corner.col == Pos.West then
+            p2 = "right"
+        else
+            p2 = "left"
+        end
+
+        local best_card = find_max_sum_from_hand_for_position(hand, { p1, p2 }, corner, board, rules)
+
+        if best_card.sum > best_value then
+            best_pos = corner
+            best_hand_index = best_card.index
+            best_value = best_card.sum
+        end
+    end
+
+    if not best_pos or not best_hand_index then
         return nil
     end
 
-    if corner.row == Pos.North then
-        if corner.col == Pos.West then
-            return {
-                hand_index = nw.index,
-                target_pos = corner,
-            }
-        else
-            return {
-                hand_index = ne.index,
-                target_pos = corner,
-            }
-        end
-    else
-        if corner.col == Pos.West then
-            return {
-                hand_index = sw.index,
-                target_pos = corner,
-            }
-        else
-            return {
-                hand_index = se.index,
-                target_pos = corner,
-            }
-        end
-    end
+    return {
+        hand_index = best_hand_index,
+        target_pos = best_pos,
+    }
 end
 
 ---@param card Card
@@ -301,19 +306,25 @@ end
 ---@return EnemyPlan|nil
 function M.calculate(hand, board, rules)
     if is_board_empty(board) then
-        return defensive_move(hand, board, rules)
+        local m = defensive_move(hand, board, rules)
+        pprint("AI: (init) Defensive Move", m)
+        return m
     end
 
     local move_capturing = capturing_move(hand, board, rules)
     local move_defensive = defensive_move(hand, board, rules)
 
     if move_capturing ~= nil then
+        pprint("AI: Capturing Move", move_capturing)
         return move_capturing
     elseif move_defensive ~= nil then
+        pprint("AI: Defensive Move", move_defensive)
         return move_defensive
     end
 
-    return random_move(hand, board, rules)
+    local m = random_move(hand, board, rules)
+    pprint("AI: Random Move", m)
+    return m
 end
 
 return M
