@@ -11,7 +11,7 @@ go.property("player_hand", false)
 
 ---@param self Hand
 function init(self)
-    msg.post("#placeholder", "disable")
+    msg.post("#score", "disable")
 
     self.cards_visible = self.player_hand
 
@@ -151,5 +151,15 @@ function on_message(self, message_id, message, sender)
         if is_open then
             self.cards_visible = true
         end
+    elseif message_id == hash "set_score" then
+        if message.score <= 0 then
+            msg.post("#score", "disable")
+            return
+        end
+
+        msg.post("#score", "enable")
+
+        local score = math.min(9, message.score)
+        sprite.play_flipbook("#score", string.format("%i", score))
     end
 end

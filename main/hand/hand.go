@@ -9,13 +9,21 @@ embedded_components {
   ""
 }
 embedded_components {
-  id: "placeholder"
+  id: "score"
   type: "sprite"
-  data: "default_animation: \"card-back\"\n"
+  data: "default_animation: \"9\"\n"
   "material: \"/builtins/materials/sprite.material\"\n"
   "textures {\n"
   "  sampler: \"texture_sampler\"\n"
-  "  texture: \"/assets/cards.atlas\"\n"
+  "  texture: \"/assets/score.tilesource\"\n"
   "}\n"
   ""
+  position {
+    y: -100.0
+    z: 10.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
 }

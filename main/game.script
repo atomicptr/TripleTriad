@@ -74,6 +74,12 @@ end
 
 ---@param self Game
 local function end_battle_phase(self)
+    -- update scores
+    local score = count_score(self)
+
+    msg.post("/hand_player", "set_score", { score = score.player })
+    msg.post("/hand_enemy", "set_score", { score = score.enemy })
+
     if #self.player_hand == 0 or #self.enemy_hand == 0 then
         self.state = State.GAME_END
         return
@@ -193,6 +199,10 @@ function update(self, dt)
         msg.post("/hand_enemy", "set_cards", {
             cards = self.enemy_hand,
         })
+
+        -- reset scores
+        msg.post("/hand_player", "set_score", { score = 0 })
+        msg.post("/hand_enemy", "set_score", { score = 0 })
 
         self.player_turn = Rng.flip_coin()
         print("Player turn?", self.player_turn)
