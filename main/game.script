@@ -3,6 +3,7 @@ local cards = require "main.data.cards"
 local AI = require "main.ai.smart"
 local Rng = require "modules.rng"
 local Grid = require "modules.grid"
+local Ruleset = require "main.data.rulesets"
 
 local Pos = Grid.Pos
 
@@ -33,6 +34,7 @@ local State = {
 ---@field flipping boolean
 ---@field action_log Action[]
 ---@field time float
+---@field rules Ruleset[]
 
 ---@param self Game
 function init(self)
@@ -113,6 +115,15 @@ function update(self, dt)
         self.time = 0
         self.action_log = {}
         self.flipping = false
+
+        self.rules = {
+            Ruleset.Open,
+        }
+
+        -- apply rulesets
+        msg.post("/hand_enemy", "apply_rules", {
+            rules = self.rules,
+        })
 
         msg.post("/board", "reset")
 

@@ -1,5 +1,6 @@
+local Ruleset = require "main.data.rulesets"
+
 go.property("player_hand", false)
-go.property("cards_visible", true)
 
 ---@class Hand
 ---@field player_hand boolean
@@ -10,6 +11,8 @@ go.property("cards_visible", true)
 ---@param self Hand
 function init(self)
     msg.post("#placeholder", "disable")
+
+    self.cards_visible = self.player_hand
 
     self.cards = {}
     self.selected_index = 1
@@ -139,5 +142,11 @@ function on_message(self, message_id, message, sender)
         order_cards(self)
 
         msg.post(sender, "hand_card_removed")
+    elseif message_id == hash "apply_rules" then
+        for _, rule in ipairs(message.rules) do
+            if rule == Ruleset.Open then
+                self.cards_visible = true
+            end
+        end
     end
 end
