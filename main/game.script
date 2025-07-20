@@ -124,6 +124,7 @@ local function setup_game(self)
         Rng.draw_index(cards),
         Rng.draw_index(cards),
     }
+
     self.enemy_hand = {
         Rng.draw_index(cards),
         Rng.draw_index(cards),
@@ -294,6 +295,12 @@ function update(self, dt)
 
         local last_action = self.action_log[#self.action_log]
 
+        local owner = "enemy"
+
+        if last_action.player then
+            owner = "player"
+        end
+
         local new_card = last_action.card
         local new_card_pos = { row = last_action.row, col = last_action.col }
 
@@ -312,7 +319,7 @@ function update(self, dt)
                     return fc.row == item.row and fc.col == item.col
                 end)
 
-                table.insert(flip_cards, fc)
+                table.insert(same_captures, fc)
 
                 if not is_new then
                     table.insert(same_new_captures, fc)
@@ -320,15 +327,14 @@ function update(self, dt)
             end
 
             if #same_new_captures > 0 then
+                pprint("SAME:", same_new_captures)
                 table.insert(self.flip_groups, { animation = "same", targets = same_new_captures })
             end
 
             -- process combo
             local combo_captures = {}
 
-            for _, fc in ipairs(combat.process_combo(same_captures, self.field, self.rules)) do
-                capture_animation = "combo"
-
+            for _, fc in ipairs(combat.process_combo(owner, same_captures, self.field, self.rules)) do
                 local is_new = tbl.some(flip_cards, function(item)
                     return fc.row == item.row and fc.col == item.col
                 end)
@@ -339,7 +345,8 @@ function update(self, dt)
             end
 
             if #combo_captures > 0 then
-                table.insert(self.flip_groups, { animation = "new", targets = combo_captures })
+                pprint("COMBO:", combo_captures)
+                table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
             end
         end
 
@@ -586,7 +593,7 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "pop_flip_group" then
         self.flipping = true
 
-        local flip_group = table.remove(self.flip_groups)
+        local flip_group = table.remove(self.flip_groups, 1)
 
         -- flip in data model
         for _, card in ipairs(flip_group.targets) do

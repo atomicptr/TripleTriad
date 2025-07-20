@@ -162,16 +162,18 @@ function M.process_same(card, card_pos, board, rules)
     end)
 end
 
+---@param owner "player"|"enemy"
 ---@param flipped_cards CardSlot[]
 ---@param board GameField
 ---@param rules Ruleset[]
 ---@return CardSlot[]
-function M.process_combo(flipped_cards, board, rules)
+function M.process_combo(owner, flipped_cards, board, rules)
     assert(tbl.contains(rules, Ruleset.Combo))
 
     local res = {}
 
     for _, fc in ipairs(flipped_cards) do
+        fc.owner = owner
         local combo_flipped = M.process_combat(fc.card, { row = fc.row, col = fc.col }, board, rules)
 
         for _, combo_flip in ipairs(combo_flipped) do
