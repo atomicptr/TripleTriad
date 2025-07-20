@@ -1,3 +1,5 @@
+local tbl = require "modules.tbl"
+local Ruleset = require "main.data.rulesets"
 local M = {}
 
 ---@class FieldSet
@@ -8,9 +10,12 @@ local M = {}
 
 ---@param card Card
 ---@param field_element Element|nil
+---@param rules Ruleset[]
 ---@return FieldSet
-function M.card_values(card, field_element)
-    if not field_element then
+function M.card_values(card, field_element, rules)
+    local is_element = tbl.contains(rules, Ruleset.Elemental)
+
+    if not is_element or not field_element then
         return {
             top = card.top,
             bottom = card.bottom,

@@ -222,7 +222,7 @@ function update(self, dt)
             new_card_field_element = self.field[last_action.row][last_action.col].element
         end
 
-        local new_card_vals = combat.card_values(new_card, new_card_field_element)
+        local new_card_vals = combat.card_values(new_card, new_card_field_element, self.rules)
 
         local orthogonal_cards = get_orthogonal_cards(self, last_action.row, last_action.col)
 
@@ -245,7 +245,7 @@ function update(self, dt)
                     enemy_card_field_element = self.field[c.value.row][c.value.col].element
                 end
 
-                local enemy_card_vals = combat.card_values(enemy_card, enemy_card_field_element)
+                local enemy_card_vals = combat.card_values(enemy_card, enemy_card_field_element, self.rules)
 
                 -- TODO: handle rulesets
                 if c.direction == "up" and new_card_vals.top > enemy_card_vals.bottom then

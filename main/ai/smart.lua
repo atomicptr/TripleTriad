@@ -80,6 +80,7 @@ local function defensive_move(hand, board, rules)
     local sw = find_max_sum_from_hand(hand, { "bottom", "left" })
     local se = find_max_sum_from_hand(hand, { "bottom", "right" })
 
+    -- TODO: take element into account
     -- TODO: find best option
     local corner = Rng.draw(corners)
 
@@ -128,7 +129,7 @@ local function find_capturable_board_positions(card, board, rules)
             return
         end
 
-        local curr_vals = combat.card_values(curr.card, curr.element)
+        local curr_vals = combat.card_values(curr.card, curr.element, rules)
 
         -- dont attack your own cards
         if curr.owner == "enemy" then
@@ -139,7 +140,7 @@ local function find_capturable_board_positions(card, board, rules)
         if below_pos then
             local below_field = board[below_pos.row][below_pos.col]
             if below_field and not below_field.card then
-                local card_vals = combat.card_values(card, below_field.element)
+                local card_vals = combat.card_values(card, below_field.element, rules)
 
                 if card_vals.top > curr_vals.bottom then
                     table.insert(positions, below_pos)
@@ -151,7 +152,7 @@ local function find_capturable_board_positions(card, board, rules)
         if above_pos then
             local above_field = board[above_pos.row][above_pos.col]
             if above_field and not above_field.card then
-                local card_vals = combat.card_values(card, above_field.element)
+                local card_vals = combat.card_values(card, above_field.element, rules)
 
                 if card_vals.bottom > curr_vals.top then
                     table.insert(positions, above_pos)
@@ -163,7 +164,7 @@ local function find_capturable_board_positions(card, board, rules)
         if left_pos then
             local left_field = board[left_pos.row][left_pos.col]
             if left_field and not left_field.card then
-                local card_vals = combat.card_values(card, left_field.element)
+                local card_vals = combat.card_values(card, left_field.element, rules)
 
                 if card_vals.right > curr_vals.left then
                     table.insert(positions, left_pos)
@@ -175,7 +176,7 @@ local function find_capturable_board_positions(card, board, rules)
         if right_pos then
             local right_field = board[right_pos.row][right_pos.col]
             if right_field and not right_field.card then
-                local card_vals = combat.card_values(card, right_field.element)
+                local card_vals = combat.card_values(card, right_field.element, rules)
 
                 if card_vals.left > curr_vals.right then
                     table.insert(positions, right_pos)
@@ -209,16 +210,19 @@ local function capturing_move(hand, board, rules)
         return nil
     end
 
-    -- TODO: find best move
+    -- TODO: out of all options, find the highest value capture for the lowest value card
+    -- TODO: multi captures should also be taken into account
     return Rng.draw(capturing_moves)
 end
 
 ---@param hand integer[]
 ---@param board GameField
+---@param rules Ruleset[]
 ---@return EnemyPlan|nil
-function M.random_move(hand, board)
+local function random_move(hand, board, rules)
     local possible_moves = {}
 
+    -- TODO: dont play on negative element if possible
     Grid.for_each(function(row, col)
         if not board[row][col].card then
             table.insert(possible_moves, { row = row, col = col })
@@ -249,7 +253,7 @@ function M.calculate(hand, board, rules)
         return move_defensive
     end
 
-    return M.random_move(hand, board)
+    return random_move(hand, board, rules)
 end
 
 return M
