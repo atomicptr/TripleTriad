@@ -14,6 +14,15 @@ M.Pos = Pos
 M.Rows = { Pos.North, Pos.Center, Pos.South }
 M.Cols = { Pos.West, Pos.Center, Pos.East }
 
+---@param callback fun(row: Pos, col: Pos)
+function M.for_each(callback)
+    for _, row in ipairs(M.Rows) do
+        for _, col in ipairs(M.Cols) do
+            callback(row, col)
+        end
+    end
+end
+
 ---@param row Pos
 ---@param col Pos
 ---@return { row: Pos, col: Pos }|nil

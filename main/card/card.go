@@ -149,3 +149,22 @@ embedded_components {
     y: 0.95
   }
 }
+embedded_components {
+  id: "elementmod"
+  type: "sprite"
+  data: "default_animation: \"element-positive-text\"\n"
+  "material: \"/builtins/materials/sprite.material\"\n"
+  "textures {\n"
+  "  sampler: \"texture_sampler\"\n"
+  "  texture: \"/assets/card_element_modifier.atlas\"\n"
+  "}\n"
+  ""
+  position {
+    y: -61.0
+    z: 0.2
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+}

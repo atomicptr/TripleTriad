@@ -1,4 +1,7 @@
 local Grid = require "modules.grid"
+local Ruleset = require "main.data.rulesets"
+
+local tbl = require "modules.tbl"
 
 local Pos = Grid.Pos
 
@@ -28,17 +31,26 @@ local card_pos = {
 ---@field cursor_col Pos
 ---@field cards table<Pos, table<Pos, userdata|nil>>
 ---@field cards_to_flip OwnedCard[]
+---@field elements userdata[]
 
 ---@param self Board
-local function reset(self)
-    if self.cards then
-        for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
-            for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
-                if self.cards[row][col] then
-                    go.delete(self.cards[row][col])
-                end
-            end
+---@param rules Ruleset[]
+---@param element_placements ElementPlacement[]
+local function reset(self, rules, element_placements)
+    local is_elemental = tbl.contains(rules, Ruleset.Elemental)
+
+    if self.elements then
+        for _, element in ipairs(self.elements) do
+            go.delete(element)
         end
+    end
+
+    if self.cards then
+        Grid.for_each(function(row, col)
+            if self.cards[row][col] then
+                go.delete(self.cards[row][col])
+            end
+        end)
     end
 
     self.selected_card = nil
@@ -62,11 +74,28 @@ local function reset(self)
             [Pos.East] = nil,
         },
     }
+
+    if is_elemental then
+        self.elements = {}
+
+        for _, ep in ipairs(element_placements) do
+            local pos = card_pos[ep.pos.row][ep.pos.col]
+            pos.z = 0.1
+
+            local id = factory.create("#element_factory", pos)
+
+            msg.post(id, "set_element", {
+                element = ep.element,
+            })
+
+            table.insert(self.elements, id)
+        end
+    end
 end
 
 ---@param self Board
 function init(self)
-    reset(self)
+    reset(self, {}, {})
 end
 
 ---@param self Board
@@ -124,7 +153,10 @@ end
 ---@param self Board
 ---@param player_card boolean
 function place_card(self, player_card)
-    local id = factory.create("#card_factory", card_pos[self.cursor_row][self.cursor_col], nil, {
+    local pos = card_pos[self.cursor_row][self.cursor_col]
+    pos.z = 5.0
+
+    local id = factory.create("#card_factory", pos, nil, {
         card_id = self.selected_card,
         player_card = player_card,
     })
@@ -132,6 +164,7 @@ function place_card(self, player_card)
     self.cards[self.cursor_row][self.cursor_col] = id
 
     msg.post("/game", "board_place_card_finished", {
+        id = id,
         card = self.selected_card,
         row = self.cursor_row,
         col = self.cursor_col,
@@ -158,7 +191,7 @@ end
 function on_message(self, message_id, message, sender)
     if message_id == hash "reset" then
         pprint "board: reset"
-        reset(self)
+        reset(self, message.rules or {}, message.element_placements or {})
     elseif message_id == hash "init" then
         pprint "board: init"
 

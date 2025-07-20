@@ -1,0 +1,35 @@
+local Element = require "main.data.elements"
+
+---@param element Element
+---@return hash
+local function element_hash(element)
+    if element == Element.Earth then
+        return hash "earth"
+    elseif element == Element.Fire then
+        return hash "fire"
+    elseif element == Element.Holy then
+        return hash "holy"
+    elseif element == Element.Ice then
+        return hash "ice"
+    elseif element == Element.Poison then
+        return hash "poison"
+    elseif element == Element.Thunder then
+        return hash "thunder"
+    elseif element == Element.Water then
+        return hash "water"
+    elseif element == Element.Wind then
+        return hash "wind"
+    end
+
+    return hash "unreachable"
+end
+
+---@param self table
+---@param message_id hash
+---@param message table
+---@param sender hash
+function on_message(self, message_id, message, sender)
+    if message_id == hash "set_element" then
+        sprite.play_flipbook("#sprite", element_hash(message.element))
+    end
+end

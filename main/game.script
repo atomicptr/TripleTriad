@@ -1,9 +1,11 @@
 local cards = require "main.data.cards"
+local tbl = require "modules.tbl"
 
 local AI = require "main.ai.smart"
 local Rng = require "modules.rng"
 local Grid = require "modules.grid"
 local Ruleset = require "main.data.rulesets"
+local Element = require "main.data.elements"
 
 local Pos = Grid.Pos
 
@@ -35,6 +37,7 @@ local State = {
 ---@field action_log Action[]
 ---@field time float
 ---@field rules Ruleset[]
+---@field element_placement ElementPlacement[]
 
 ---@param self Game
 function init(self)
@@ -107,6 +110,8 @@ end
 function update(self, dt)
     self.time = self.time + dt
 
+    local is_element = tbl.contains(self.rules or {}, Ruleset.Elemental)
+
     if self.state == State.GAME_START then
         Rng.init()
 
@@ -118,6 +123,7 @@ function update(self, dt)
 
         self.rules = {
             Ruleset.Open,
+            Ruleset.Elemental,
         }
 
         -- apply rulesets
@@ -125,7 +131,23 @@ function update(self, dt)
             rules = self.rules,
         })
 
-        msg.post("/board", "reset")
+        self.element_placement = {}
+
+        if tbl.contains(self.rules, Ruleset.Elemental) then
+            Grid.for_each(function(row, col)
+                if Rng.chance(0.3) then
+                    table.insert(self.element_placement, {
+                        pos = { row = row, col = col },
+                        element = Rng.enum(Element),
+                    })
+                end
+            end)
+        end
+
+        msg.post("/board", "reset", {
+            rules = self.rules,
+            element_placements = self.element_placement,
+        })
 
         -- TODO: figure out decks somehow
         self.player_hand = {
@@ -190,25 +212,48 @@ function update(self, dt)
         local last_action = self.action_log[#self.action_log]
 
         local new_card = last_action.card
+        local new_card_mod = 0
+
+        if is_element then
+            local field_element = self.field[last_action.row][last_action.col].element
+
+            new_card_mod = -1
+
+            if new_card.element == field_element then
+                new_card_mod = 1
+            end
+        end
 
         local orthogonal_cards = get_orthogonal_cards(self, last_action.row, last_action.col)
 
         ---@type OwnedCard[]
         local flip_cards = {}
 
+        -- TODO: refactor combat evaluation into function
         for _, c in ipairs(orthogonal_cards) do
             -- only evaluate cards that aren't "your own"
             if c.value.player ~= self.player_turn then
                 local enemy_card = c.value.card
+                local enemy_card_mod = 0
+
+                if is_element then
+                    enemy_card_mod = -1
+
+                    local field_element = self.field[c.value.row][c.value.col]
+
+                    if enemy_card.element == field_element then
+                        enemy_card_mod = 1
+                    end
+                end
 
                 -- TODO: handle SAME ruleset
-                if c.direction == "up" and new_card.top > enemy_card.bottom then
+                if c.direction == "up" and new_card.top + new_card_mod > enemy_card.bottom + enemy_card_mod then
                     table.insert(flip_cards, c.value)
-                elseif c.direction == "down" and new_card.bottom > enemy_card.top then
+                elseif c.direction == "down" and new_card.bottom + new_card_mod > enemy_card.top + enemy_card_mod then
                     table.insert(flip_cards, c.value)
-                elseif c.direction == "left" and new_card.left > enemy_card.right then
+                elseif c.direction == "left" and new_card.left + new_card_mod > enemy_card.right + enemy_card_mod then
                     table.insert(flip_cards, c.value)
-                elseif c.direction == "right" and new_card.right > enemy_card.left then
+                elseif c.direction == "right" and new_card.right + new_card_mod > enemy_card.left + enemy_card_mod then
                     table.insert(flip_cards, c.value)
                 end
             end
@@ -356,7 +401,27 @@ function on_message(self, message_id, message, sender)
             player = self.player_turn,
             row = message.row,
             col = message.col,
+            element = nil,
         }
+
+        if tbl.contains(self.rules, Ruleset.Elemental) then
+            for _, ep in ipairs(self.element_placement) do
+                -- card was placed on elemental spot
+                if ep.pos.row == message.row and ep.pos.col == message.col then
+                    self.field[message.row][message.col].element = ep.element
+
+                    local modifier = -1
+
+                    if ep.element == self.field[message.row][message.col].card.element then
+                        modifier = 1
+                    end
+
+                    msg.post(message.id, "set_modifier", {
+                        modifier = modifier,
+                    })
+                end
+            end
+        end
 
         msg.post("/cursor", "hide")
 

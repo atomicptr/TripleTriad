@@ -4,21 +4,18 @@ function M.init()
     math.randomseed(os.time())
 end
 
+---@param rate float from 0.0 to 1.0, for 30% use 0.3
+---@return boolean
+function M.chance(rate)
+    rate = math.max(rate, 0.0)
+    rate = math.min(rate, 1.0)
+
+    return math.random() < rate
+end
+
 ---@return boolean
 function M.flip_coin()
-    local count = 0
-
-    for _ = 1, 100 do
-        if math.random() >= 0.5 then
-            count = count + 1
-        end
-
-        if count >= 50 then
-            return true
-        end
-    end
-
-    return false
+    return M.chance(0.5)
 end
 
 function M.draw(tbl)
@@ -37,6 +34,16 @@ function M.draw_index(tbl)
     end
 
     return math.random(1, #tbl)
+end
+
+function M.enum(tbl)
+    local items = {}
+
+    for _, v in pairs(tbl) do
+        table.insert(items, v)
+    end
+
+    return M.draw(items)
 end
 
 return M

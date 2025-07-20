@@ -18,8 +18,11 @@ go.property("visible", true)
 ---@param rank integer
 ---@return hash
 local function card_rank(rank)
-    if rank == 10 then
+    if rank >= 10 then
         return hash "A"
+    end
+    if rank <= 0 then
+        return hash "0"
     end
     return hash(tostring(rank))
 end
@@ -61,20 +64,33 @@ local function setup_card(self)
         msg.post("#rank_right", "disable")
 
         msg.post("#element", "disable")
+        msg.post("#elementmod", "disable")
         return
     end
 
     sprite.play_flipbook("#front", hash(self.card_id))
 
-    sprite.play_flipbook("#rank_top", card_rank(self.card.top))
-    sprite.play_flipbook("#rank_bottom", card_rank(self.card.bottom))
-    sprite.play_flipbook("#rank_left", card_rank(self.card.left))
-    sprite.play_flipbook("#rank_right", card_rank(self.card.right))
+    sprite.play_flipbook("#rank_top", card_rank(self.card.top + self.modifier))
+    sprite.play_flipbook("#rank_bottom", card_rank(self.card.bottom + self.modifier))
+    sprite.play_flipbook("#rank_left", card_rank(self.card.left + self.modifier))
+    sprite.play_flipbook("#rank_right", card_rank(self.card.right + self.modifier))
 
     if self.card.element then
         sprite.play_flipbook("#element", element_hash(self.card.element))
     else
         msg.post("#element", "disable")
+    end
+
+    if self.modifier ~= 0 then
+        msg.post("#elementmod", "enable")
+
+        if self.modifier > 0 then
+            sprite.play_flipbook("#elementmod", "element-positive-text")
+        else
+            sprite.play_flipbook("#elementmod", "element-negative-text")
+        end
+    else
+        msg.post("#elementmod", "disable")
     end
 end
 
@@ -89,6 +105,8 @@ local function set_background(self)
 end
 
 function init(self)
+    self.modifier = 0
+
     set_background(self)
     setup_card(self)
 end
@@ -107,5 +125,8 @@ function on_message(self, message_id, message, sender)
 
         -- TODO: after animation is done, call back
         msg.post("/board", "card_finished_flipping")
+    elseif message_id == hash "set_modifier" then
+        self.modifier = message.modifier or 0
+        setup_card(self)
     end
 end

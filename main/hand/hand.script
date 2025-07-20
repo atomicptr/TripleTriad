@@ -1,4 +1,5 @@
 local Ruleset = require "main.data.rulesets"
+local tbl = require "modules.tbl"
 
 go.property("player_hand", false)
 
@@ -143,10 +144,10 @@ function on_message(self, message_id, message, sender)
 
         msg.post(sender, "hand_card_removed")
     elseif message_id == hash "apply_rules" then
-        for _, rule in ipairs(message.rules) do
-            if rule == Ruleset.Open then
-                self.cards_visible = true
-            end
+        local is_open = tbl.contains(message.rules, Ruleset.Open)
+
+        if is_open then
+            self.cards_visible = true
         end
     end
 end

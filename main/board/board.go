@@ -22,3 +22,9 @@ embedded_components {
   data: "prototype: \"/main/card/card.go\"\n"
   ""
 }
+embedded_components {
+  id: "element_factory"
+  type: "factory"
+  data: "prototype: \"/main/board/element.go\"\n"
+  ""
+}
