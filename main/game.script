@@ -24,6 +24,9 @@ local State = {
     GAME_END = 5,
 }
 
+local SCENARIO = nil
+-- local SCENARIO = require("main.data.scenario").TestSameCombo
+
 ---@class Game
 ---@field state State
 ---@field field GameField
@@ -40,6 +43,7 @@ local State = {
 ---@field element_placement ElementPlacement[]
 ---@field can_end boolean
 ---@field end_started boolean
+---@field setup_cards { card_id: integer, pos: BoardPos, owner: "player"|"enemy" }[]
 
 ---@param self Game
 function init(self)
@@ -73,6 +77,112 @@ local function count_score(self)
     end
 
     return score
+end
+
+---@param self Game
+local function reset_game(self)
+    self.hand_selected = nil
+
+    self.time = 0
+    self.action_log = {}
+    self.flipping = false
+    self.flip_groups = {}
+    self.can_end = false
+    self.end_started = false
+    self.element_placement = {}
+    self.setup_cards = {}
+end
+
+---@param self Game
+local function setup_game(self)
+    reset_game(self)
+
+    self.rules = {
+        Ruleset.Elemental,
+        Ruleset.Same,
+    }
+
+    -- do this AFTER setting rules :)
+    is_element = tbl.contains(self.rules or {}, Ruleset.Elemental)
+
+    if is_element then
+        Grid.for_each(function(row, col)
+            if Rng.chance(0.3) then
+                table.insert(self.element_placement, {
+                    pos = { row = row, col = col },
+                    element = Rng.enum(Element),
+                })
+            end
+        end)
+    end
+
+    -- TODO: figure out decks somehow
+    self.player_hand = {
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+    }
+    self.enemy_hand = {
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+        Rng.draw_index(cards),
+    }
+
+    self.field = Grid.create(function(row, col)
+        local element = nil
+
+        if is_element then
+            for _, epos in ipairs(self.element_placement) do
+                if epos.pos.row == row and epos.pos.col == col then
+                    element = epos.element
+                    break
+                end
+            end
+        end
+
+        ---@type CardSlot
+        return {
+            card = nil,
+            row = row,
+            col = col,
+            element = element,
+        }
+    end)
+
+    self.player_turn = Rng.flip_coin()
+end
+
+---@param self Game
+local function setup_scenario(self)
+    reset_game(self)
+
+    self.rules = SCENARIO.rules
+
+    Grid.for_each(function(row, col)
+        table.insert(self.element_placement, {
+            pos = { row = row, col = col },
+            element = SCENARIO.field[row][col].element,
+        })
+
+        if SCENARIO.field[row][col].card then
+            table.insert(self.setup_cards, {
+                card_id = SCENARIO.field[row][col].card.id,
+                pos = { row = row, col = col },
+                owner = SCENARIO.field[row][col].owner,
+            })
+        end
+    end)
+
+    self.player_hand = SCENARIO.player_hand
+    self.enemy_hand = SCENARIO.enemy_hand
+
+    self.field = SCENARIO.field
+
+    self.player_turn = SCENARIO.start_turn == "player"
 end
 
 ---@param self Game
@@ -118,22 +228,12 @@ end
 function update(self, dt)
     self.time = self.time + dt
 
-    local is_element = tbl.contains(self.rules or {}, Ruleset.Elemental)
-
     if self.state == State.GAME_START then
-        self.hand_selected = nil
-
-        self.time = 0
-        self.action_log = {}
-        self.flipping = false
-        self.flip_groups = {}
-        self.can_end = false
-        self.end_started = false
-
-        self.rules = {
-            Ruleset.Elemental,
-            Ruleset.Same,
-        }
+        if SCENARIO then
+            setup_scenario(self)
+        else
+            setup_game(self)
+        end
 
         -- doesnt contain combo, but a rule requires combo
         if not tbl.contains(self.rules, Ruleset.Combo) then
@@ -142,71 +242,15 @@ function update(self, dt)
             end
         end
 
-        -- do this AFTER setting rules :)
-        is_element = tbl.contains(self.rules or {}, Ruleset.Elemental)
-
         -- apply rulesets
         msg.post("/hand_enemy", "apply_rules", {
             rules = self.rules,
         })
 
-        self.element_placement = {}
-
-        if is_element then
-            Grid.for_each(function(row, col)
-                if Rng.chance(0.3) then
-                    table.insert(self.element_placement, {
-                        pos = { row = row, col = col },
-                        element = Rng.enum(Element),
-                    })
-                end
-            end)
-        end
-
         msg.post("/board", "reset", {
             rules = self.rules,
             element_placements = self.element_placement,
         })
-
-        -- TODO: figure out decks somehow
-        self.player_hand = {
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-        }
-        self.enemy_hand = {
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-            Rng.draw_index(cards),
-        }
-
-        -- self.player_hand = { 110, 110, 110, 110, 110 }
-        -- self.enemy_hand = { 110, 110, 110, 110, 110 }
-
-        self.field = Grid.create(function(row, col)
-            local element = nil
-
-            if is_element then
-                for _, epos in ipairs(self.element_placement) do
-                    if epos.pos.row == row and epos.pos.col == col then
-                        element = epos.element
-                        break
-                    end
-                end
-            end
-
-            ---@type CardSlot
-            return {
-                card = nil,
-                row = row,
-                col = col,
-                element = element,
-            }
-        end)
 
         msg.post("/hand_player", "set_cards", {
             cards = self.player_hand,
@@ -216,11 +260,19 @@ function update(self, dt)
             cards = self.enemy_hand,
         })
 
+        -- spawn setup cards
+        for _, setup_card in ipairs(self.setup_cards) do
+            msg.post("/board", "setup_spawn_card", {
+                card_id = setup_card.card_id,
+                card_pos = setup_card.pos,
+                owner = setup_card.owner,
+            })
+        end
+
         -- reset scores
         msg.post("/hand_player", "set_score", { score = 0 })
         msg.post("/hand_enemy", "set_score", { score = 0 })
 
-        self.player_turn = Rng.flip_coin()
         print("Player turn?", self.player_turn)
 
         if self.player_turn then

@@ -150,18 +150,30 @@ local function apply_cursor_movement(self, direction)
     end
 end
 
----@param self Board
----@param player_card boolean
-function place_card(self, player_card)
-    local pos = card_pos[self.cursor_row][self.cursor_col]
+local function spawn_card(self, card, cpos, owner)
+    local pos = card_pos[cpos.row][cpos.col]
     pos.z = 5.0
 
     local id = factory.create("#card_factory", pos, nil, {
-        card_id = self.selected_card,
-        player_card = player_card,
+        card_id = card,
+        player_card = owner == "player",
     })
 
-    self.cards[self.cursor_row][self.cursor_col] = id
+    self.cards[cpos.row][cpos.col] = id
+
+    return id
+end
+
+---@param self Board
+---@param player_card boolean
+function place_card(self, player_card)
+    local owner = "enemy"
+
+    if player_card then
+        owner = "player"
+    end
+
+    local id = spawn_card(self, self.selected_card, { row = self.cursor_row, col = self.cursor_col }, owner)
 
     msg.post("/game", "board_place_card_finished", {
         id = id,
@@ -236,5 +248,8 @@ function on_message(self, message_id, message, sender)
         flip_card(self)
     elseif message_id == hash "cursor_done_moving" then
         self.cursor_moving = false
+    elseif message_id == hash "setup_spawn_card" then
+        pprint("board: setup_spawn_card", message)
+        spawn_card(self, message.card_id, message.card_pos, message.owner)
     end
 end
