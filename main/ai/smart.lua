@@ -118,11 +118,13 @@ end
 ---@param card Card
 ---@param board GameField
 ---@param rules Ruleset[]
----@return BoardPos[]
+---@return { pos: BoardPos, target_pos: BoardPos }[]
 local function find_capturable_board_positions(card, board, rules)
     local positions = {}
 
     Grid.for_each(function(row, col)
+        local target_pos = { row = row, col = col }
+
         local curr = board[row][col]
 
         if not curr.card then
@@ -143,7 +145,7 @@ local function find_capturable_board_positions(card, board, rules)
                 local card_vals = combat.card_values(card, below_field.element, rules)
 
                 if card_vals.top > curr_vals.bottom then
-                    table.insert(positions, below_pos)
+                    table.insert(positions, { pos = below_pos, target_pos = target_pos })
                 end
             end
         end
@@ -155,7 +157,7 @@ local function find_capturable_board_positions(card, board, rules)
                 local card_vals = combat.card_values(card, above_field.element, rules)
 
                 if card_vals.bottom > curr_vals.top then
-                    table.insert(positions, above_pos)
+                    table.insert(positions, { pos = above_pos, target_pos = target_pos })
                 end
             end
         end
@@ -167,7 +169,7 @@ local function find_capturable_board_positions(card, board, rules)
                 local card_vals = combat.card_values(card, left_field.element, rules)
 
                 if card_vals.right > curr_vals.left then
-                    table.insert(positions, left_pos)
+                    table.insert(positions, { pos = left_pos, target_pos = target_pos })
                 end
             end
         end
@@ -179,13 +181,22 @@ local function find_capturable_board_positions(card, board, rules)
                 local card_vals = combat.card_values(card, right_field.element, rules)
 
                 if card_vals.left > curr_vals.right then
-                    table.insert(positions, right_pos)
+                    table.insert(positions, { pos = right_pos, target_pos = target_pos })
                 end
             end
         end
     end)
 
     return positions
+end
+
+---@param card Card
+---@param field_element Element|nil
+---@param rules Ruleset[]
+---@return integer
+local function calculate_card_value(card, field_element, rules)
+    local val = combat.card_values(card, field_element, rules)
+    return val.top + val.bottom + val.left + val.right
 end
 
 ---@param hand integer[]
@@ -198,11 +209,39 @@ local function capturing_move(hand, board, rules)
     for index, card_id in ipairs(hand) do
         local card = cards[card_id]
 
-        for _, pos in ipairs(find_capturable_board_positions(card, board, rules)) do
-            table.insert(capturing_moves, {
-                hand_index = index,
-                target_pos = pos,
-            })
+        for _, cappos in ipairs(find_capturable_board_positions(card, board, rules)) do
+            local pos = cappos.pos
+            local target_pos = cappos.target_pos
+
+            local value = calculate_card_value(card, board[pos.row][pos.col].element, rules)
+            local target_value = calculate_card_value(card, board[target_pos.row][target_pos.col].element, rules)
+
+            local found = false
+
+            for prev_index, prev_tbl in ipairs(capturing_moves) do
+                if prev_tbl.row == pos.row and prev_tbl.col == pos.col and prev_tbl.plan.hand_index == index then
+                    capturing_moves[prev_index].value = capturing_moves[prev_index].value + value
+                    capturing_moves[prev_index].target_value = capturing_moves[prev_index].target_value + target_value
+
+                    found = true
+                    break
+                end
+            end
+
+            if not found then
+                table.insert(capturing_moves, {
+                    row = pos.row,
+                    col = pos.col,
+
+                    value = value,
+                    target_value = target_value,
+
+                    plan = {
+                        hand_index = index,
+                        target_pos = pos,
+                    },
+                })
+            end
         end
     end
 
@@ -210,9 +249,30 @@ local function capturing_move(hand, board, rules)
         return nil
     end
 
-    -- TODO: out of all options, find the highest value capture for the lowest value card
-    -- TODO: multi captures should also be taken into account
-    return Rng.draw(capturing_moves)
+    -- find highest target value while minimizing our card value
+    local curr_index = nil
+    local curr_value = 0
+    local curr_target_value = 0
+
+    for pos_index, move in ipairs(capturing_moves) do
+        if move.target_value > curr_target_value then
+            curr_index = pos_index
+            curr_value = move.value
+            curr_target_value = move.target_value
+        elseif move.target_value == curr_target_value then
+            if move.value < curr_value then
+                curr_index = pos_index
+                curr_value = move.value
+                curr_target_value = move.target_value
+            end
+        end
+    end
+
+    if not curr_index then
+        return nil
+    end
+
+    return capturing_moves[curr_index].plan
 end
 
 ---@param hand integer[]
