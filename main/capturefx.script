@@ -1,0 +1,35 @@
+go.property("in_speed", 0.3)
+go.property("out_speed", 0.1)
+go.property("stay_duration", 1.0)
+
+---@class CaptureFX
+---@field in_speed float
+---@field out_speed float
+---@field stay_duration float
+
+---@param self CaptureFX
+function init(self)
+    go.set("#sprite", "scale.y", 0)
+end
+
+---@param self CaptureFX
+---@param message_id hash
+---@param message table
+---@param sender hash
+function on_message(self, message_id, message, sender)
+    if message_id == hash "show" then
+        sprite.play_flipbook("#sprite", string.format("capture-%s", message.type))
+
+        go.animate("#sprite", "scale.y", go.PLAYBACK_ONCE_FORWARD, 1, go.EASING_LINEAR, self.in_speed, 0, function()
+            go.animate(
+                "#sprite",
+                "scale.y",
+                go.PLAYBACK_ONCE_FORWARD,
+                0,
+                go.EASING_LINEAR,
+                self.out_speed,
+                self.stay_duration
+            )
+        end)
+    end
+end

@@ -543,3 +543,14 @@ end
 function play_sound(name)
     msg.post("/sfx#" .. name, "play_sound", { gain = 0.2 })
 end
+
+---@param type string
+function play_capturefx(type)
+    msg.post("/capturefx", "show", {
+        type = type,
+    })
+
+    if type == "combo" then
+        play_sound "combo"
+    end
+end

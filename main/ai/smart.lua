@@ -7,6 +7,8 @@ local Pos = Grid.Pos
 
 local M = {}
 
+---@param board GameField
+---@return boolean
 local function is_board_empty(board)
     for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
         for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do

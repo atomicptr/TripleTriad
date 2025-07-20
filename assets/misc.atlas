@@ -5,15 +5,6 @@ images {
   image: "/assets/textures/bg-result.jpg"
 }
 images {
-  image: "/assets/textures/capture-combo.png"
-}
-images {
-  image: "/assets/textures/capture-plus.png"
-}
-images {
-  image: "/assets/textures/capture-same.png"
-}
-images {
   image: "/assets/textures/cursor.png"
 }
 extrude_borders: 2
