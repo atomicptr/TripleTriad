@@ -194,8 +194,7 @@ function update(self, dt)
             cards = self.enemy_hand,
         })
 
-        self.player_turn = false
-        -- self.player_turn = Rng.flip_coin()
+        self.player_turn = Rng.flip_coin()
         print("Player turn?", self.player_turn)
 
         if self.player_turn then
