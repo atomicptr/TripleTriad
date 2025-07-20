@@ -32,11 +32,14 @@ local State = {
 ---@field enemy_hand integer[]
 ---@field enemy_plan EnemyPlan|nil
 ---@field hand_selected integer|nil
----@field flipping boolean
+---@field flipping bool
+---@field flip_groups FlipGroup[]
 ---@field action_log Action[]
 ---@field time float
 ---@field rules Ruleset[]
 ---@field element_placement ElementPlacement[]
+---@field can_end boolean
+---@field end_started boolean
 
 ---@param self Game
 function init(self)
@@ -123,11 +126,21 @@ function update(self, dt)
         self.time = 0
         self.action_log = {}
         self.flipping = false
+        self.flip_groups = {}
+        self.can_end = false
+        self.end_started = false
 
         self.rules = {
-            Ruleset.Open,
             Ruleset.Elemental,
+            Ruleset.Same,
         }
+
+        -- doesnt contain combo, but a rule requires combo
+        if not tbl.contains(self.rules, Ruleset.Combo) then
+            if tbl.contains(self.rules, Ruleset.Same) or tbl.contains(self.rules, Ruleset.Plus) then
+                table.insert(self.rules, Ruleset.Combo)
+            end
+        end
 
         -- do this AFTER setting rules :)
         is_element = tbl.contains(self.rules or {}, Ruleset.Elemental)
@@ -170,6 +183,9 @@ function update(self, dt)
             Rng.draw_index(cards),
             Rng.draw_index(cards),
         }
+
+        -- self.player_hand = { 110, 110, 110, 110, 110 }
+        -- self.enemy_hand = { 110, 110, 110, 110, 110 }
 
         self.field = Grid.create(function(row, col)
             local element = nil
@@ -222,75 +238,65 @@ function update(self, dt)
             return
         end
 
+        self.flip_groups = {}
+
         local last_action = self.action_log[#self.action_log]
 
         local new_card = last_action.card
-        local new_card_field_element = nil
+        local new_card_pos = { row = last_action.row, col = last_action.col }
 
-        if is_element then
-            new_card_field_element = self.field[last_action.row][last_action.col].element
-        end
-
-        local new_card_vals = combat.card_values(new_card, new_card_field_element, self.rules)
-
-        local orthogonal_cards = get_orthogonal_cards(self, last_action.row, last_action.col)
-
-        ---@type CardSlot[]
-        local flip_cards = {}
-
-        -- TODO: refactor combat evaluation into function
-        for _, c in ipairs(orthogonal_cards) do
-            -- only evaluate cards that aren't "your own"
-            if (self.player_turn and c.value.owner == "enemy") or c.value.owner == "player" then
-                local enemy_card = c.value.card
-                assert(enemy_card)
-
-                local enemy_card_field_element = nil
-
-                if is_element then
-                    enemy_card_field_element = self.field[c.value.row][c.value.col].element
-                end
-
-                local enemy_card_vals = combat.card_values(enemy_card, enemy_card_field_element, self.rules)
-
-                -- TODO: handle rulesets
-                if c.direction == "up" and new_card_vals.top > enemy_card_vals.bottom then
-                    table.insert(flip_cards, c.value)
-                elseif c.direction == "down" and new_card_vals.bottom > enemy_card_vals.top then
-                    table.insert(flip_cards, c.value)
-                elseif c.direction == "left" and new_card_vals.left > enemy_card_vals.right then
-                    table.insert(flip_cards, c.value)
-                elseif c.direction == "right" and new_card_vals.right > enemy_card_vals.left then
-                    table.insert(flip_cards, c.value)
-                end
-            end
-        end
+        local flip_cards = combat.process_combat(new_card, new_card_pos, self.field, self.rules)
 
         if #flip_cards > 0 then
-            self.flipping = true
+            table.insert(self.flip_groups, { animation = nil, targets = flip_cards })
+        end
 
-            -- flip in data model
-            for _, card in ipairs(flip_cards) do
-                local owner = self.field[card.row][card.col].owner
+        if tbl.contains(self.rules, Ruleset.Same) then
+            local same_captures = {}
+            local same_new_captures = {}
 
-                if owner == "player" then
-                    self.field[card.row][card.col].owner = "enemy"
-                else
-                    self.field[card.row][card.col].owner = "player"
+            for _, fc in ipairs(combat.process_same(new_card, new_card_pos, self.field, self.rules)) do
+                local is_new = tbl.some(flip_cards, function(item)
+                    return fc.row == item.row and fc.col == item.col
+                end)
+
+                table.insert(flip_cards, fc)
+
+                if not is_new then
+                    table.insert(same_new_captures, fc)
                 end
             end
 
-            msg.post("/board", "flip_cards", {
-                cards = flip_cards,
-                player = self.player_turn,
-            })
+            if #same_new_captures > 0 then
+                table.insert(self.flip_groups, { animation = "same", targets = same_new_captures })
+            end
 
+            -- process combo
+            local combo_captures = {}
+
+            for _, fc in ipairs(combat.process_combo(same_captures, self.field, self.rules)) do
+                capture_animation = "combo"
+
+                local is_new = tbl.some(flip_cards, function(item)
+                    return fc.row == item.row and fc.col == item.col
+                end)
+
+                if not is_new then
+                    table.insert(combo_captures, fc)
+                end
+            end
+
+            if #combo_captures > 0 then
+                table.insert(self.flip_groups, { animation = "new", targets = combo_captures })
+            end
+        end
+
+        if #self.flip_groups > 0 then
+            msg.post(".", "pop_flip_group")
             return
         end
 
-        -- TODO: handle effects or something
-
-        -- ending battle phase
+        -- if nothing to flip, switch
         end_battle_phase(self)
     elseif self.state == State.ENEMY_TURN then
         self.player_turn = false
@@ -316,14 +322,21 @@ function update(self, dt)
 
         -- TODO: dont just open gameover but animate it into
 
-        pprint("Score: ", score)
+        if not self.end_started then
+            self.end_started = true
+            pprint("Score: ", score, self.can_end)
 
-        if score.player == score.enemy then
-            msg.post("/gameover", "gameover", { result = "draw" })
-        elseif score.player > score.enemy then
-            msg.post("/gameover", "gameover", { result = "win" })
-        else
-            msg.post("/gameover", "gameover", { result = "lose" })
+            timer.delay(1, false, function()
+                if score.player == score.enemy then
+                    msg.post("/gameover", "gameover", { result = "draw" })
+                elseif score.player > score.enemy then
+                    msg.post("/gameover", "gameover", { result = "win" })
+                else
+                    msg.post("/gameover", "gameover", { result = "lose" })
+                end
+
+                self.can_end = true
+            end)
         end
     end
 end
@@ -357,6 +370,10 @@ function select_action(self)
     elseif self.state == State.PLAYER_FIELD then
         msg.post("/board", "select")
     elseif self.state == State.GAME_END then
+        if not self.can_end then
+            return
+        end
+
         self.state = State.GAME_START
 
         msg.post("/gameover", "restart")
@@ -503,34 +520,48 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "board_finished_flipping" then
         pprint("game: board_finished_flipping", message)
 
+        if #self.flip_groups > 0 then
+            msg.post(".", "pop_flip_group")
+            return
+        end
+
         self.flipping = false
         end_battle_phase(self)
     elseif message_id == hash "card_flipped" then
         pprint("game: card_flipped", message)
 
         play_sound "capture"
-    end
-end
+    elseif message_id == hash "pop_flip_group" then
+        self.flipping = true
 
----@param self Game
----@param row Pos
----@param col Pos
----@return { value: CardSlot, direction: "up"|"down"|"left"|"right" }[]
-function get_orthogonal_cards(self, row, col)
-    local ortho_cards = {}
+        local flip_group = table.remove(self.flip_groups)
 
-    for _, pos in ipairs(Grid.orthogonal(row, col)) do
-        local card = self.field[pos.row][pos.col]
+        -- flip in data model
+        for _, card in ipairs(flip_group.targets) do
+            local owner = self.field[card.row][card.col].owner
 
-        if card then
-            table.insert(ortho_cards, {
-                value = card,
-                direction = pos.direction,
+            if owner == "player" then
+                self.field[card.row][card.col].owner = "enemy"
+            else
+                self.field[card.row][card.col].owner = "player"
+            end
+        end
+
+        if flip_group.animation then
+            msg.post("/capturefx", "flip_cards", {
+                animation = flip_group.animation,
+                targets = flip_group.targets,
+            })
+
+            if flip_group.animation == "combo" then
+                play_sound "combo"
+            end
+        else
+            msg.post("/board", "flip_cards", {
+                targets = flip_group.targets,
             })
         end
     end
-
-    return ortho_cards
 end
 
 ---@param self Game
@@ -542,15 +573,4 @@ end
 ---@param name string
 function play_sound(name)
     msg.post("/sfx#" .. name, "play_sound", { gain = 0.2 })
-end
-
----@param type string
-function play_capturefx(type)
-    msg.post("/capturefx", "show", {
-        type = type,
-    })
-
-    if type == "combo" then
-        play_sound "combo"
-    end
 end

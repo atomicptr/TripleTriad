@@ -13,4 +13,34 @@ function M.contains(tbl, item)
     return false
 end
 
+---@generic T
+---@param tbl T[]
+---@param callback fun(item: T): boolean
+---@return boolean
+function M.some(tbl, callback)
+    for _, item in ipairs(tbl) do
+        if callback(item) then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@generic T
+---@param tbl T[]
+---@param callback fun(item: T, index: integer): boolean
+---@return T[]
+function M.filter(tbl, callback)
+    local res = {}
+
+    for index, item in ipairs(tbl) do
+        if callback(item, index) then
+            table.insert(res, item)
+        end
+    end
+
+    return res
+end
+
 return M

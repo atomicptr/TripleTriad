@@ -20,4 +20,14 @@
 ---@field element Element|nil
 ---
 
+---@alias Direction "up"|"down"|"left"|"right"
+
+---@class OrthoCard
+---@field slot CardSlot
+---@field direction Direction
+
 ---@alias GameField table<Pos, table<Pos, CardSlot>>
+
+---@class FlipGroup
+---@field animation string|nil
+---@field targets CardSlot[]

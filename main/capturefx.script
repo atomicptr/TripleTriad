@@ -17,8 +17,10 @@ end
 ---@param message table
 ---@param sender hash
 function on_message(self, message_id, message, sender)
-    if message_id == hash "show" then
-        sprite.play_flipbook("#sprite", string.format("capture-%s", message.type))
+    if message_id == hash "flip_cards" then
+        pprint("capturefx: flip_cards", message)
+
+        sprite.play_flipbook("#sprite", string.format("capture-%s", message.animation))
 
         go.animate("#sprite", "scale.y", go.PLAYBACK_ONCE_FORWARD, 1, go.EASING_LINEAR, self.in_speed, 0, function()
             go.animate(
@@ -28,7 +30,12 @@ function on_message(self, message_id, message, sender)
                 0,
                 go.EASING_LINEAR,
                 self.out_speed,
-                self.stay_duration
+                self.stay_duration,
+                function()
+                    msg.post("/board", "flip_cards", {
+                        targets = message.targets,
+                    })
+                end
             )
         end)
     end

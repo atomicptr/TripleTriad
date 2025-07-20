@@ -221,9 +221,9 @@ function on_message(self, message_id, message, sender)
 
         apply_cursor_movement(self, message.direction)
     elseif message_id == hash "flip_cards" then
-        pprint("board: flip_cards", message.cards)
+        pprint("board: flip_cards", message)
 
-        self.cards_to_flip = message.cards
+        self.cards_to_flip = message.targets
         flip_card(self)
     elseif message_id == hash "card_finished_flipping" then
         pprint("board: card_finished_flipping", message)

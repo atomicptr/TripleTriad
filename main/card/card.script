@@ -105,14 +105,18 @@ end
 ---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "flip" then
+        pprint("card: flip", message)
+
         -- TODO: play cool animation
         self.player_card = not self.player_card
         set_background(self)
 
-        msg.post("/game", "card_flipped")
+        timer.delay(0.05, false, function()
+            msg.post("/game", "card_flipped")
 
-        -- TODO: after animation is done, call back
-        msg.post("/board", "card_finished_flipping")
+            -- TODO: after animation is done, call back
+            msg.post("/board", "card_finished_flipping")
+        end)
     elseif message_id == hash "set_modifier" then
         self.modifier = message.modifier or 0
         setup_card(self)
