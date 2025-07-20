@@ -234,10 +234,7 @@ function update(self, dt)
             -- only evaluate cards that aren't "your own"
             if (self.player_turn and c.value.owner == "enemy") or c.value.owner == "player" then
                 local enemy_card = c.value.card
-
-                if not enemy_card then
-                    goto continue
-                end
+                assert(enemy_card)
 
                 local enemy_card_field_element = nil
 
@@ -258,8 +255,6 @@ function update(self, dt)
                     table.insert(flip_cards, c.value)
                 end
             end
-
-            ::continue::
         end
 
         if #flip_cards > 0 then

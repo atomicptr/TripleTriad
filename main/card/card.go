@@ -134,8 +134,8 @@ embedded_components {
 embedded_components {
   id: "back"
   type: "sprite"
-  data: "default_animation: \"card-back\"\n"
-  "material: \"/main/card/card_background.material\"\n"
+  data: "default_animation: \"card-back-player\"\n"
+  "material: \"/builtins/materials/sprite.material\"\n"
   "textures {\n"
   "  sampler: \"texture_sampler\"\n"
   "  texture: \"/assets/cards.atlas\"\n"

@@ -1,16 +1,6 @@
 local Element = require "main.data.elements"
 local cards = require "main.data.cards"
 
-local PLAYER_COLORS = {
-    vmath.vector4(192 / 255, 213 / 255, 240 / 255, 1),
-    vmath.vector4(45 / 255, 65 / 255, 119 / 255, 1),
-}
-
-local ENEMY_COLORS = {
-    vmath.vector4(225 / 255, 172 / 255, 194 / 255, 1),
-    vmath.vector4(91 / 255, 37 / 255, 49 / 255, 1),
-}
-
 go.property("card_id", 1)
 go.property("player_card", false)
 go.property("visible", true)
@@ -96,11 +86,9 @@ end
 
 local function set_background(self)
     if self.player_card then
-        go.set("#back", "top_color", PLAYER_COLORS[1])
-        go.set("#back", "bottom_color", PLAYER_COLORS[2])
+        sprite.play_flipbook("#back", "card-back-player")
     else
-        go.set("#back", "top_color", ENEMY_COLORS[1])
-        go.set("#back", "bottom_color", ENEMY_COLORS[2])
+        sprite.play_flipbook("#back", "card-back-enemy")
     end
 end
 
