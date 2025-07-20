@@ -30,7 +30,7 @@ local card_pos = {
 ---@field cursor_row Pos
 ---@field cursor_col Pos
 ---@field cards table<Pos, table<Pos, userdata|nil>>
----@field cards_to_flip OwnedCard[]
+---@field cards_to_flip CardSlot[]
 ---@field elements userdata[]
 
 ---@param self Board
@@ -190,15 +190,15 @@ end
 ---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "reset" then
-        pprint "board: reset"
+        pprint("board: reset", message)
         reset(self, message.rules or {}, message.element_placements or {})
     elseif message_id == hash "init" then
-        pprint "board: init"
+        pprint("board: init", message)
 
         self.selected_card = message.selected_card
         set_cursor(self, Pos.Center, Pos.Center, true)
     elseif message_id == hash "select" then
-        pprint "board: select"
+        pprint("board: select", message)
 
         msg.post("/game", "board_request_place_card", {
             card = self.selected_card,
@@ -206,18 +206,18 @@ function on_message(self, message_id, message, sender)
             col = self.cursor_col,
         })
     elseif message_id == hash "place_card" then
-        pprint "board: place_card"
+        pprint("board: place_card", message.player_card)
 
         place_card(self, message.player_card)
     elseif message_id == hash "enemy_place" then
-        pprint "board: enemy_place"
+        pprint("board: enemy_place", message)
 
         self.selected_card = message.selected_card
 
         set_cursor(self, message.row, message.col, true)
         place_card(self, false)
     elseif message_id == hash "move_cursor" then
-        pprint "board: move_cursor"
+        pprint("board: move_cursor", message)
 
         apply_cursor_movement(self, message.direction)
     elseif message_id == hash "flip_cards" then
@@ -226,6 +226,8 @@ function on_message(self, message_id, message, sender)
         self.cards_to_flip = message.cards
         flip_card(self)
     elseif message_id == hash "card_finished_flipping" then
+        pprint("board: card_finished_flipping", message)
+
         if #self.cards_to_flip == 0 then
             msg.post("/game", "board_finished_flipping")
             return

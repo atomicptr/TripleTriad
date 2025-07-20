@@ -1,13 +1,13 @@
 ---@enum Element
 local Element = {
-    Thunder = 0,
-    Earth = 1,
-    Ice = 2,
-    Wind = 3,
-    Poison = 4,
-    Fire = 5,
-    Water = 6,
-    Holy = 7,
+    Thunder = 1,
+    Earth = 2,
+    Ice = 3,
+    Wind = 4,
+    Poison = 5,
+    Fire = 6,
+    Water = 7,
+    Holy = 8,
 }
 
 return Element

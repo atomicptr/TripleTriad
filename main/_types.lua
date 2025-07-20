@@ -1,8 +1,8 @@
 ---@meta
 
----@class OwnedCard
----@field card Card
----@field player boolean
+---@class CardSlot
+---@field card Card|nil
+---@field owner "player"|"enemy"|nil
 ---@field row Pos
 ---@field col Pos
 ---@field element Element|nil
@@ -18,3 +18,6 @@
 ---@class ElementPlacement
 ---@field pos BoardPos
 ---@field element Element|nil
+---
+
+---@alias GameField table<Pos, table<Pos, CardSlot>>

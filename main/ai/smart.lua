@@ -1,6 +1,7 @@
 local cards = require "main.data.cards"
 local Grid = require "modules.grid"
 local Rng = require "modules.rng"
+local combat = require "main.combat"
 
 local Pos = Grid.Pos
 
@@ -22,13 +23,15 @@ end
 local function find_empty_corners(board)
     local corners = {}
 
-    for _, row in ipairs { Pos.North, Pos.South } do
-        for _, col in ipairs { Pos.West, Pos.East } do
-            if not board[row][col] then
-                table.insert(corners, { row = row, col = col })
-            end
+    Grid.for_each(function(row, col)
+        if row == Pos.Center or col == Pos.Center then
+            return
         end
-    end
+
+        if not board[row][col].card then
+            table.insert(corners, { row = row, col = col })
+        end
+    end)
 
     return corners
 end
@@ -61,9 +64,10 @@ local function find_max_sum_from_hand(hand, sides)
 end
 
 ---@param hand integer[]
----@param board table<Pos, table<Pos, OwnedCard|nil>>
+---@param board GameField
+---@param rules Ruleset[]
 ---@return EnemyPlan|nil
-local function defensive_move(hand, board)
+local function defensive_move(hand, board, rules)
     local corners = find_empty_corners(board)
 
     -- NOTE: this case cant happen when ai starts first
@@ -111,59 +115,89 @@ local function defensive_move(hand, board)
 end
 
 ---@param card Card
----@param board table<Pos, table<Pos, OwnedCard|nil>>
+---@param board GameField
+---@param rules Ruleset[]
 ---@return BoardPos[]
-local function find_capturable_board_positions(card, board)
+local function find_capturable_board_positions(card, board, rules)
     local positions = {}
 
-    for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
-        for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
-            local curr = board[row][col]
-            if curr and curr.player then
-                if card.top > curr.card.bottom then
-                    local p = Grid.below(row, col)
-                    if p and not board[p.row][p.col] then
-                        table.insert(positions, p)
-                    end
-                end
+    Grid.for_each(function(row, col)
+        local curr = board[row][col]
 
-                if card.bottom > curr.card.top then
-                    local p = Grid.above(row, col)
-                    if p and not board[p.row][p.col] then
-                        table.insert(positions, p)
-                    end
-                end
+        if not curr.card then
+            return
+        end
 
-                if card.left > curr.card.right then
-                    local p = Grid.left(row, col)
-                    if p and not board[p.row][p.col] then
-                        table.insert(positions, p)
-                    end
-                end
+        local curr_vals = combat.card_values(curr.card, curr.element)
 
-                if card.right > curr.card.left then
-                    local p = Grid.right(row, col)
-                    if p and not board[p.row][p.col] then
-                        table.insert(positions, p)
-                    end
+        -- dont attack your own cards
+        if curr.owner == "enemy" then
+            return
+        end
+
+        local below_pos = Grid.below(row, col)
+        if below_pos then
+            local below_field = board[below_pos.row][below_pos.col]
+            if below_field and not below_field.card then
+                local card_vals = combat.card_values(card, below_field.element)
+
+                if card_vals.top > curr_vals.bottom then
+                    table.insert(positions, below_pos)
                 end
             end
         end
-    end
+
+        local above_pos = Grid.above(row, col)
+        if above_pos then
+            local above_field = board[above_pos.row][above_pos.col]
+            if above_field and not above_field.card then
+                local card_vals = combat.card_values(card, above_field.element)
+
+                if card_vals.bottom > curr_vals.top then
+                    table.insert(positions, above_pos)
+                end
+            end
+        end
+
+        local left_pos = Grid.left(row, col)
+        if left_pos then
+            local left_field = board[left_pos.row][left_pos.col]
+            if left_field and not left_field.card then
+                local card_vals = combat.card_values(card, left_field.element)
+
+                if card_vals.right > curr_vals.left then
+                    table.insert(positions, left_pos)
+                end
+            end
+        end
+
+        local right_pos = Grid.right(row, col)
+        if right_pos then
+            local right_field = board[right_pos.row][right_pos.col]
+            if right_field and not right_field.card then
+                local card_vals = combat.card_values(card, right_field.element)
+
+                if card_vals.left > curr_vals.right then
+                    table.insert(positions, right_pos)
+                end
+            end
+        end
+    end)
 
     return positions
 end
 
 ---@param hand integer[]
----@param board table<Pos, table<Pos, OwnedCard|nil>>
+---@param board GameField
+---@param rules Ruleset[]
 ---@return EnemyPlan|nil
-local function capturing_move(hand, board)
+local function capturing_move(hand, board, rules)
     local capturing_moves = {}
 
     for index, card_id in ipairs(hand) do
         local card = cards[card_id]
 
-        for _, pos in ipairs(find_capturable_board_positions(card, board)) do
+        for _, pos in ipairs(find_capturable_board_positions(card, board, rules)) do
             table.insert(capturing_moves, {
                 hand_index = index,
                 target_pos = pos,
@@ -180,18 +214,16 @@ local function capturing_move(hand, board)
 end
 
 ---@param hand integer[]
----@param board table<Pos, table<Pos, OwnedCard|nil>>
+---@param board GameField
 ---@return EnemyPlan|nil
 function M.random_move(hand, board)
     local possible_moves = {}
 
-    for _, row in ipairs { Pos.North, Pos.Center, Pos.South } do
-        for _, col in ipairs { Pos.West, Pos.Center, Pos.East } do
-            if not board[row][col] then
-                table.insert(possible_moves, { row = row, col = col })
-            end
+    Grid.for_each(function(row, col)
+        if not board[row][col].card then
+            table.insert(possible_moves, { row = row, col = col })
         end
-    end
+    end)
 
     return {
         hand_index = Rng.draw_index(hand),
@@ -200,15 +232,16 @@ function M.random_move(hand, board)
 end
 
 ---@param hand integer[]
----@param board table<Pos, table<Pos, OwnedCard|nil>>
+---@param board GameField
+---@param rules Ruleset[]
 ---@return EnemyPlan|nil
-function M.calculate(hand, board)
+function M.calculate(hand, board, rules)
     if is_board_empty(board) then
-        return defensive_move(hand, board)
+        return defensive_move(hand, board, rules)
     end
 
-    local move_capturing = capturing_move(hand, board)
-    local move_defensive = defensive_move(hand, board)
+    local move_capturing = capturing_move(hand, board, rules)
+    local move_defensive = defensive_move(hand, board, rules)
 
     if move_capturing ~= nil then
         return move_capturing

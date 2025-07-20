@@ -23,6 +23,23 @@ function M.for_each(callback)
     end
 end
 
+---@generic T
+---@param callback fun(row: Pos, col: Pos): T
+---@return table<Pos, table<Pos, T>>
+function M.create(callback)
+    local grid = {}
+
+    for _, row in ipairs(M.Rows) do
+        grid[row] = {}
+
+        for _, col in ipairs(M.Cols) do
+            grid[row][col] = callback(row, col)
+        end
+    end
+
+    return grid
+end
+
 ---@param row Pos
 ---@param col Pos
 ---@return { row: Pos, col: Pos }|nil

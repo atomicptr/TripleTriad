@@ -93,7 +93,7 @@ end
 ---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "set_cards" then
-        pprint "hand: set_cards"
+        pprint("hand: set_cards", message)
 
         if self.cards then
             for _, card in ipairs(self.cards) do
@@ -105,7 +105,7 @@ function on_message(self, message_id, message, sender)
         self.cards = {}
         set_cards(self, message.cards)
     elseif message_id == hash "init" then
-        pprint "hand: init"
+        pprint("hand: init", message)
 
         if not (message.dont_reset_index or false) then
             self.selected_index = 1
@@ -117,25 +117,25 @@ function on_message(self, message_id, message, sender)
         })
         order_cards(self)
     elseif message_id == hash "move_cursor" then
-        pprint "hand: move_cursor"
+        pprint("hand: move_cursor", message)
 
         apply_cursor_movement(self, message.direction)
         order_cards(self)
     elseif message_id == hash "select" then
-        pprint "hand: select"
+        pprint("hand: select", message)
 
         msg.post(sender, "hand_selected_card", {
             index = self.selected_index,
         })
     elseif message_id == hash "enemy_select" then
-        pprint "hand: enemy_select"
+        pprint("hand: enemy_select", message)
 
         self.selected_index = message.index
         order_cards(self)
 
         msg.post(sender, "hand_enemy_selected_card")
     elseif message_id == hash "remove_card" then
-        pprint "hand: remove_card"
+        pprint("hand: remove_card", message)
 
         self.selected_index = nil
         local card = table.remove(self.cards, message.index)
@@ -144,6 +144,8 @@ function on_message(self, message_id, message, sender)
 
         msg.post(sender, "hand_card_removed")
     elseif message_id == hash "apply_rules" then
+        pprint("hand: apply_rules", message)
+
         local is_open = tbl.contains(message.rules, Ruleset.Open)
 
         if is_open then
