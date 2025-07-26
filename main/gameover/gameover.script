@@ -28,7 +28,7 @@ function on_message(self, message_id, message, sender)
         end
 
         -- prepare text
-        sprite.play_flipbook("/gameover_text#text", "result-" .. message.result)
+        sprite.play_flipbook("/gameover_text#sprite", "result-" .. message.result)
         local pos = go.get_position "/gameover_text"
         go.set_position(pos + vmath.vector3(DISPLAY_WIDTH * 2, 0, 0), "/gameover_text")
         msg.post("/gameover_text", "enable")

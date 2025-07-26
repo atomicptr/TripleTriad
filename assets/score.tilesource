@@ -38,6 +38,12 @@ animations {
   playback: PLAYBACK_NONE
 }
 animations {
+  id: "7"
+  start_tile: 7
+  end_tile: 7
+  playback: PLAYBACK_NONE
+}
+animations {
   id: "8"
   start_tile: 8
   end_tile: 8

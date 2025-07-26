@@ -688,6 +688,11 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "card_flipped" then
         pprint("game: card_flipped", message)
 
+        local score = count_score(self)
+
+        msg.post("/hand_player", "set_score", { score = score.player })
+        msg.post("/hand_enemy", "set_score", { score = score.enemy })
+
         play_sound "capture"
     elseif message_id == hash "pop_flip_group" then
         self.flipping = true
