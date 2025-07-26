@@ -16,12 +16,12 @@ local Element = require "main.data.elements"
 
 ---@enum State
 local State = {
-    GAME_START = 0,
-    PLAYER_HAND = 1,
-    PLAYER_FIELD = 2,
-    BATTLE_PHASE = 3,
-    ENEMY_TURN = 4,
-    GAME_END = 5,
+    GAME_START = 1,
+    PLAYER_HAND = 2,
+    PLAYER_FIELD = 3,
+    BATTLE_PHASE = 4,
+    ENEMY_TURN = 5,
+    GAME_END = 6,
 }
 
 ---@type Scenario
@@ -48,8 +48,10 @@ local SCENARIO = nil
 ---@field can_end boolean
 ---@field end_started boolean
 ---@field setup_cards { card_id: integer, pos: BoardPos, owner: "player"|"enemy" }[]
----@field moues_mode boolean
+---@field mouse_mode boolean
 ---@field mouse_pos vector3
+---@field drag_object hash|nil
+---@field drag_orig_pos vector3
 
 ---@param self Game
 function init(self)
@@ -58,8 +60,9 @@ function init(self)
     self.state = State.GAME_START
     self.field = nil
     self.time = 0
-    self.moues_mode = false
+    self.mouse_mode = false
     self.mouse_pos = vmath.vector3(0)
+    self.drag_orig_pos = vmath.vector3(0)
 
     msg.post("#music", "play_sound", { gain = 0.2 })
 
@@ -99,6 +102,7 @@ local function reset_game(self)
     self.end_started = false
     self.element_placement = {}
     self.setup_cards = {}
+    self.drag_object = nil
 end
 
 ---@param self Game
@@ -228,7 +232,9 @@ local function end_battle_phase(self)
 
         -- enemy has no cards for some reason? Go to player
         if tbl.count(self.enemy_hand) == 0 then
-            msg.post("/hand_player", "init")
+            if not self.mouse_mode then
+                msg.post("/hand_player", "init")
+            end
             self.state = State.PLAYER_HAND
             return
         end
@@ -244,7 +250,9 @@ local function end_battle_phase(self)
             return
         end
 
-        msg.post("/hand_player", "init")
+        if not self.mouse_mode then
+            msg.post("/hand_player", "init")
+        end
     end
 end
 
@@ -302,7 +310,10 @@ function update(self, dt)
 
         if self.player_turn then
             self.state = State.PLAYER_HAND
-            msg.post("/hand_player", "init")
+            if not self.mouse_mode then
+                self.hand_selected = 1
+                msg.post("/hand_player", "init")
+            end
             return
         end
 
@@ -472,6 +483,15 @@ function update(self, dt)
             end
         end
     end
+
+    if self.drag_object then
+        msg.post(self.drag_object, "dragging", {
+            pos = self.mouse_pos,
+        })
+        msg.post("/board", "pointer_move", {
+            mouse_pos = self.mouse_pos,
+        })
+    end
 end
 
 ---@param self Game
@@ -499,17 +519,10 @@ end
 ---@param self Game
 function select_action(self)
     if self.state == State.PLAYER_HAND then
-        msg.post("/hand_player", "select", {
-            mouse_mode = self.moues_mode,
-            mouse_pos = self.mouse_pos,
-        })
+        msg.post("/hand_player", "select")
     elseif self.state == State.PLAYER_FIELD then
         msg.post("/board", "select")
     elseif self.state == State.GAME_END then
-        if not self.can_end then
-            return
-        end
-
         self.state = State.GAME_START
 
         msg.post("/gameover", "restart")
@@ -520,6 +533,11 @@ end
 function cancel_action(self)
     if self.state == State.PLAYER_FIELD then
         self.state = State.PLAYER_HAND
+
+        if self.mouse_mode then
+            return
+        end
+
         msg.post("/hand_player", "init", {
             dont_reset_index = true,
         })
@@ -529,43 +547,61 @@ function cancel_action(self)
 end
 
 ---@param self Game
+local function disable_mouse_mode(self)
+    if self.mouse_mode then
+        self.hand_selected = 1
+        msg.post("/hand_player", "init")
+    end
+    self.mouse_mode = false
+end
+
+---@param self Game
 ---@param action_id hash
 ---@param action table
 function on_input(self, action_id, action)
-    if action.screen_x and action.screen_y then
-        self.moues_mode = true
+    if action.pressed and action_id == hash "click" then
+        self.mouse_mode = true
+        self.hand_selected = nil
+        msg.post("/cursor", "hide")
+    end
+
+    if self.mouse_mode and action.screen_x and action.screen_y then
         self.mouse_pos.x = action.screen_x
         self.mouse_pos.y = action.screen_y
 
-        if self.moues_mode then
-            if self.state == State.PLAYER_HAND then
-                msg.post("/hand_player", "pointer_move", {
-                    mouse_pos = self.mouse_pos,
-                })
-            elseif self.state == State.PLAYER_FIELD then
-                msg.post("/board", "pointer_move", {
-                    mouse_pos = self.mouse_pos,
-                })
-            end
+        if not self.drag_object then
+            msg.post("/hand_player", "pointer_move", {
+                mouse_pos = self.mouse_pos,
+            })
         end
     end
 
-    if action.pressed and not (action_id == hash "select" or action_id == hash "cancel") then
-        self.moues_mode = false
-    end
-
     if action.pressed and action_id == hash "move_up" then
+        disable_mouse_mode(self)
         move_cursor(self, "up")
     elseif action.pressed and action_id == hash "move_down" then
+        disable_mouse_mode(self)
         move_cursor(self, "down")
     elseif action.pressed and action_id == hash "move_left" then
+        disable_mouse_mode(self)
         move_cursor(self, "left")
     elseif action.pressed and action_id == hash "move_right" then
+        disable_mouse_mode(self)
         move_cursor(self, "right")
     elseif action.pressed and action_id == hash "select" then
         select_action(self)
     elseif action.pressed and action_id == hash "cancel" then
         cancel_action(self)
+    elseif self.mouse_mode and action_id == hash "click" then
+        if self.state == State.PLAYER_HAND then
+            if action.pressed then
+                msg.post("/hand_player", "drag_started", { mouse_pos = self.mouse_pos })
+            elseif action.released and self.drag_object then
+                msg.post("/board", "dragging_request_drop", { pos = self.mouse_pos })
+            end
+        elseif self.state == State.GAME_END and self.can_end then
+            select_action(self)
+        end
     end
 end
 
@@ -725,6 +761,33 @@ function on_message(self, message_id, message, sender)
                 targets = targets,
             })
         end
+    elseif message_id == hash "hand_drag_started" then
+        pprint("game: hand_drag_started", message)
+
+        self.drag_object = message.object
+        self.drag_orig_pos = message.orig_pos
+        self.hand_selected = message.hand_index
+    elseif message_id == hash "card_drag_ended" then
+        pprint("game: card_drag_ended", message)
+
+        self.drag_object = nil
+    elseif message_id == hash "board_drop_response" then
+        pprint("game: board_drop_response", message)
+
+        if message.granted then
+            if not self.field[message.row][message.col].card then
+                msg.post("/board", "place_card", {
+                    player_card = true,
+                    row = message.row,
+                    col = message.col,
+                    card_id = self.player_hand[self.hand_selected],
+                })
+            else
+                play_sound "forbidden"
+            end
+        end
+
+        msg.post(self.drag_object, "drag_ended", { orig_pos = self.drag_orig_pos })
     elseif message_id == hash "gameover_can_end" then
         self.can_end = true
     end

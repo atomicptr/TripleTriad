@@ -10,6 +10,8 @@ go.property("player_hand", false)
 ---@field cards_visible boolean
 ---@field cards hash[]
 ---@field selected_index integer
+---@field mouse_dragging hash|nil
+---@field mouse_pos vector3
 
 ---@param self Hand
 function init(self)
@@ -168,13 +170,33 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "pointer_move" then
         local pos = message.mouse_pos
 
-        for index, card_id in ipairs(self.cards) do
+        self.selected_index = nil
+        order_cards(self)
+
+        for _, card_id in ipairs(self.cards) do
             local card_pos = go.get_world_position(card_id)
             local card_screen_pos = screen.world_to_screen(card_pos)
 
             if math2.point_in_rect(pos, card_screen_pos, 200) then
-                self.selected_index = index
-                order_cards(self)
+                -- TODO: do some sort of hover animation
+                return
+            end
+        end
+    elseif message_id == hash "drag_started" then
+        pprint("hand: drag_started", message)
+
+        for index, card_id in ipairs(self.cards) do
+            local card_pos = go.get_world_position(card_id)
+            local card_screen_pos = screen.world_to_screen(card_pos)
+
+            if math2.point_in_rect(message.mouse_pos, card_screen_pos, 200) then
+                local pos = go.get_position(card_id)
+
+                msg.post(sender, "hand_drag_started", {
+                    object = card_id,
+                    hand_index = index,
+                    orig_pos = pos,
+                })
                 return
             end
         end

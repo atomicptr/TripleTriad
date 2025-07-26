@@ -64,11 +64,7 @@ key_trigger {
 }
 mouse_trigger {
   input: MOUSE_BUTTON_LEFT
-  action: "select"
-}
-mouse_trigger {
-  input: MOUSE_BUTTON_RIGHT
-  action: "cancel"
+  action: "click"
 }
 gamepad_trigger {
   input: GAMEPAD_LSTICK_UP

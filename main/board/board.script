@@ -222,6 +222,15 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "place_card" then
         pprint("board: place_card", message.player_card)
 
+        if message.row and message.col then
+            self.cursor_row = message.row
+            self.cursor_col = message.col
+        end
+
+        if message.card_id then
+            self.selected_card = message.card_id
+        end
+
         place_card(self, message.player_card)
     elseif message_id == hash "enemy_place" then
         pprint("board: enemy_place", message)
@@ -262,10 +271,32 @@ function on_message(self, message_id, message, sender)
                 local cell_screen_pos = screen.world_to_screen(cell_pos)
 
                 if math2.point_in_rect(pos, cell_screen_pos, 200) then
-                    set_cursor(self, row, col)
+                    -- TODO: show some sort of droppy effect
                     return
                 end
             end
         end
+    elseif message_id == hash "dragging_request_drop" then
+        pprint("board: dragging_request_drop", message)
+
+        for _, row in ipairs(Grid.Rows) do
+            for _, col in ipairs(Grid.Cols) do
+                local cell_pos = card_pos[row][col]
+                local cell_screen_pos = screen.world_to_screen(cell_pos)
+
+                if math2.point_in_rect(message.pos, cell_screen_pos, 200) then
+                    msg.post(sender, "board_drop_response", {
+                        granted = true,
+                        row = row,
+                        col = col,
+                    })
+                    return
+                end
+            end
+        end
+
+        msg.post(sender, "board_drop_response", {
+            granted = false,
+        })
     end
 end
