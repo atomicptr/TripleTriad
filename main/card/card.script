@@ -111,12 +111,21 @@ function on_message(self, message_id, message, sender)
         self.player_card = not self.player_card
         set_background(self)
 
-        timer.delay(0.05, false, function()
-            msg.post("/game", "card_flipped")
+        go.animate(
+            ".",
+            "scale.x",
+            go.PLAYBACK_ONCE_PINGPONG,
+            0,
+            go.EASING_INBOUNCE,
+            0.2,
+            0.0,
+            function(self, url, property)
+                msg.post("/game", "card_flipped")
 
-            -- TODO: after animation is done, call back
-            msg.post("/board", "card_finished_flipping")
-        end)
+                -- TODO: after animation is done, call back
+                msg.post("/board", "card_finished_flipping")
+            end
+        )
     elseif message_id == hash "set_modifier" then
         self.modifier = message.modifier or 0
         setup_card(self)
