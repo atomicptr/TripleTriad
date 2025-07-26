@@ -48,6 +48,8 @@ local SCENARIO = nil
 ---@field can_end boolean
 ---@field end_started boolean
 ---@field setup_cards { card_id: integer, pos: BoardPos, owner: "player"|"enemy" }[]
+---@field moues_mode boolean
+---@field mouse_pos vector3
 
 ---@param self Game
 function init(self)
@@ -56,6 +58,8 @@ function init(self)
     self.state = State.GAME_START
     self.field = nil
     self.time = 0
+    self.moues_mode = false
+    self.mouse_pos = vmath.vector3(0)
 
     msg.post("#music", "play_sound", { gain = 0.2 })
 
@@ -495,7 +499,10 @@ end
 ---@param self Game
 function select_action(self)
     if self.state == State.PLAYER_HAND then
-        msg.post("/hand_player", "select")
+        msg.post("/hand_player", "select", {
+            mouse_mode = self.moues_mode,
+            mouse_pos = self.mouse_pos,
+        })
     elseif self.state == State.PLAYER_FIELD then
         msg.post("/board", "select")
     elseif self.state == State.GAME_END then
@@ -525,6 +532,31 @@ end
 ---@param action_id hash
 ---@param action table
 function on_input(self, action_id, action)
+    if action.x and action.y then
+        if vmath.length(self.mouse_pos - vmath.vector3(action.x, action.y, 0)) > 16.0 then
+            self.moues_mode = true
+        end
+
+        self.mouse_pos.x = action.screen_x
+        self.mouse_pos.y = action.screen_y
+
+        if self.moues_mode then
+            if self.state == State.PLAYER_HAND then
+                msg.post("/hand_player", "pointer_move", {
+                    mouse_pos = self.mouse_pos,
+                })
+            elseif self.state == State.PLAYER_FIELD then
+                msg.post("/board", "pointer_move", {
+                    mouse_pos = self.mouse_pos,
+                })
+            end
+        end
+    end
+
+    if action.pressed and not (action_id == hash "select" or action_id == hash "cancel") then
+        self.moues_mode = false
+    end
+
     if action.pressed and action_id == hash "move_up" then
         move_cursor(self, "up")
     elseif action.pressed and action_id == hash "move_down" then

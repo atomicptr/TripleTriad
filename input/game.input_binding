@@ -62,6 +62,14 @@ key_trigger {
   input: KEY_ENTER
   action: "select"
 }
+mouse_trigger {
+  input: MOUSE_BUTTON_LEFT
+  action: "select"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_RIGHT
+  action: "cancel"
+}
 gamepad_trigger {
   input: GAMEPAD_LSTICK_UP
   action: "move_up"

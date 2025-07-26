@@ -1,5 +1,7 @@
 local Ruleset = require "main.data.rulesets"
 local tbl = require "modules.tbl"
+local screen = require "main.screen"
+local math2 = require "modules.math2"
 
 go.property("player_hand", false)
 
@@ -152,6 +154,8 @@ function on_message(self, message_id, message, sender)
             self.cards_visible = true
         end
     elseif message_id == hash "set_score" then
+        pprint("hand: set_score", message)
+
         if message.score <= 0 then
             msg.post("#score", "disable")
             return
@@ -161,5 +165,18 @@ function on_message(self, message_id, message, sender)
 
         local score = math.min(9, message.score)
         sprite.play_flipbook("#score", string.format("%i", score))
+    elseif message_id == hash "pointer_move" then
+        local pos = message.mouse_pos
+
+        for index, card_id in ipairs(self.cards) do
+            local card_pos = go.get_world_position(card_id)
+            local card_screen_pos = screen.world_to_screen(card_pos)
+
+            if math2.point_in_rect(pos, card_screen_pos, 200) then
+                self.selected_index = index
+                order_cards(self)
+                return
+            end
+        end
     end
 end

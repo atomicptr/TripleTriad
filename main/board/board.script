@@ -1,5 +1,7 @@
 local Grid = require "modules.grid"
 local Ruleset = require "main.data.rulesets"
+local screen = require "main.screen"
+local math2 = require "modules.math2"
 
 local tbl = require "modules.tbl"
 
@@ -251,5 +253,19 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "setup_spawn_card" then
         pprint("board: setup_spawn_card", message)
         spawn_card(self, message.card_id, message.card_pos, message.owner)
+    elseif message_id == hash "pointer_move" then
+        local pos = message.mouse_pos
+
+        for _, row in ipairs(Grid.Rows) do
+            for _, col in ipairs(Grid.Cols) do
+                local cell_pos = card_pos[row][col]
+                local cell_screen_pos = screen.world_to_screen(cell_pos)
+
+                if math2.point_in_rect(pos, cell_screen_pos, 200) then
+                    set_cursor(self, row, col)
+                    return
+                end
+            end
+        end
     end
 end
