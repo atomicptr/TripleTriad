@@ -29,6 +29,7 @@ local SCENARIO = nil
 -- local SCENARIO = require("main.data.scenario").TestSameCombo
 -- local SCENARIO = require("main.data.scenario").TestPlusCombo
 -- local SCENARIO = require("main.data.scenario").ElementStuff
+-- local SCENARIO = require("main.data.scenario").FullFieldFlip
 
 ---@class Game
 ---@field state State
@@ -205,6 +206,19 @@ local function end_battle_phase(self)
         return
     end
 
+    local is_game_done = Grid.fold(function(acc, row, col)
+        if self.field[row][col].card == nil then
+            return acc
+        end
+
+        return acc + 1
+    end, 0) == 9
+
+    if is_game_done then
+        self.state = State.GAME_END
+        return
+    end
+
     if self.player_turn then
         self.state = State.ENEMY_TURN
 
@@ -338,21 +352,28 @@ function update(self, dt)
             end
 
             -- process combo
-            local combo_captures = {}
+            local captures = same_captures
+            while true do
+                local combo_captures = {}
 
-            for _, fc in ipairs(combat.process_combo(owner, same_captures, self.field, self.rules)) do
-                local is_new = tbl.some(flip_cards, function(item)
-                    return fc.row == item.row and fc.col == item.col
-                end)
+                for _, fc in ipairs(combat.process_combo(owner, captures, self.field, self.rules)) do
+                    local is_new = tbl.some(flip_cards, function(item)
+                        return fc.row == item.row and fc.col == item.col
+                    end)
 
-                if not is_new then
-                    table.insert(combo_captures, fc)
+                    if not is_new then
+                        table.insert(combo_captures, fc)
+                    end
                 end
-            end
 
-            if tbl.count(combo_captures) > 0 then
-                pprint("COMBO:", combo_captures)
-                table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
+                if tbl.count(combo_captures) > 0 then
+                    pprint("COMBO:", combo_captures)
+                    table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
+
+                    captures = combo_captures
+                else
+                    break
+                end
             end
         end
 
@@ -378,21 +399,28 @@ function update(self, dt)
             end
 
             -- process combo
-            local combo_captures = {}
+            local captures = plus_captures
+            while true do
+                local combo_captures = {}
 
-            for _, fc in ipairs(combat.process_combo(owner, plus_captures, self.field, self.rules)) do
-                local is_new = tbl.some(flip_cards, function(item)
-                    return fc.row == item.row and fc.col == item.col
-                end)
+                for _, fc in ipairs(combat.process_combo(owner, captures, self.field, self.rules)) do
+                    local is_new = tbl.some(flip_cards, function(item)
+                        return fc.row == item.row and fc.col == item.col
+                    end)
 
-                if not is_new then
-                    table.insert(plus_captures, fc)
+                    if not is_new then
+                        table.insert(combo_captures, fc)
+                    end
                 end
-            end
 
-            if tbl.count(combo_captures) > 0 then
-                pprint("COMBO:", combo_captures)
-                table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
+                if tbl.count(combo_captures) > 0 then
+                    pprint("COMBO:", combo_captures)
+                    table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
+
+                    captures = combo_captures
+                else
+                    break
+                end
             end
         end
 

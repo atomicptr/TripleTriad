@@ -24,6 +24,21 @@ function M.for_each(callback)
 end
 
 ---@generic T
+---@generic U
+---@param callback fun(acc: T, row: integer, col: integer): U
+---@param initial U|nil
+---@return U|nil
+function M.fold(callback, initial)
+    local value = initial
+
+    M.for_each(function(row, col)
+        value = callback(value, row, col)
+    end)
+
+    return value
+end
+
+---@generic T
 ---@param callback fun(row: Pos, col: Pos): T
 ---@return table<Pos, table<Pos, T>>
 function M.create(callback)

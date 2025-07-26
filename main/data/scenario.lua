@@ -88,6 +88,28 @@ local scenarios = {
             { pos = { row = Pos.South, col = Pos.West }, card = 17, owner = "enemy" },
         },
     },
+
+    FullFieldFlip = {
+        start_turn = "player",
+        player_hand = { 110, 110, 110 },
+        enemy_hand = { 1, 1, 1 },
+        rules = {
+            Ruleset.Open,
+            Ruleset.Same,
+            Ruleset.Plus,
+            Ruleset.Combo,
+        },
+        field = make_grid {
+            { pos = { row = Pos.North, col = Pos.Center }, card = 10, owner = "enemy" },
+            { pos = { row = Pos.North, col = Pos.East }, card = 4, owner = "enemy" },
+            { pos = { row = Pos.Center, col = Pos.West }, card = 4, owner = "enemy" },
+            { pos = { row = Pos.Center, col = Pos.Center }, card = 3, owner = "enemy" },
+            { pos = { row = Pos.Center, col = Pos.East }, card = 3, owner = "enemy" },
+            { pos = { row = Pos.South, col = Pos.West }, card = 3, owner = "enemy" },
+            { pos = { row = Pos.South, col = Pos.Center }, card = 3, owner = "enemy" },
+            { pos = { row = Pos.South, col = Pos.East }, card = 3, owner = "enemy" },
+        },
+    },
 }
 
 return scenarios
