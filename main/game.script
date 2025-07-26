@@ -532,11 +532,8 @@ end
 ---@param action_id hash
 ---@param action table
 function on_input(self, action_id, action)
-    if action.x and action.y then
-        if vmath.length(self.mouse_pos - vmath.vector3(action.x, action.y, 0)) > 16.0 then
-            self.moues_mode = true
-        end
-
+    if action.screen_x and action.screen_y then
+        self.moues_mode = true
         self.mouse_pos.x = action.screen_x
         self.mouse_pos.y = action.screen_y
 
