@@ -118,7 +118,7 @@ function M.process_same(card, card_pos, board, rules)
     end)
 
     -- rule only applies if we even have two or more targets to begin with
-    if #valid_targets < 2 then
+    if tbl.count(valid_targets) < 2 then
         return {}
     end
 
@@ -153,7 +153,7 @@ function M.process_same(card, card_pos, board, rules)
         end
     end
 
-    if #res < 2 then
+    if tbl.count(res) < 2 then
         return {}
     end
 
@@ -177,7 +177,7 @@ function M.process_plus(card, card_pos, board, rules)
     end)
 
     -- rule only applies if we even have two or more targets to begin with
-    if #valid_targets < 2 then
+    if tbl.count(valid_targets) < 2 then
         return {}
     end
 

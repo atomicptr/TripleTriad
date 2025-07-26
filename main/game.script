@@ -196,7 +196,7 @@ local function end_battle_phase(self)
     msg.post("/hand_player", "set_score", { score = score.player })
     msg.post("/hand_enemy", "set_score", { score = score.enemy })
 
-    if #self.player_hand == 0 or #self.enemy_hand == 0 then
+    if tbl.count(self.player_hand) == 0 or tbl.count(self.enemy_hand) == 0 then
         self.state = State.GAME_END
         return
     end
@@ -205,7 +205,7 @@ local function end_battle_phase(self)
         self.state = State.ENEMY_TURN
 
         -- enemy has no cards for some reason? Go to player
-        if #self.enemy_hand == 0 then
+        if tbl.count(self.enemy_hand) == 0 then
             msg.post("/hand_player", "init")
             self.state = State.PLAYER_HAND
             return
@@ -216,7 +216,7 @@ local function end_battle_phase(self)
         self.state = State.PLAYER_HAND
 
         -- player has no cards for some reason? Go to enemy
-        if #self.player_hand == 0 then
+        if tbl.count(self.player_hand) == 0 then
             msg.post("/cursor", "hide")
             self.state = State.ENEMY_TURN
             return
@@ -308,7 +308,7 @@ function update(self, dt)
 
         local flip_cards = combat.process_combat(new_card, new_card_pos, self.field, self.rules)
 
-        if #flip_cards > 0 then
+        if tbl.count(flip_cards) > 0 then
             table.insert(self.flip_groups, { animation = nil, targets = flip_cards })
         end
 
@@ -328,7 +328,7 @@ function update(self, dt)
                 end
             end
 
-            if #same_new_captures > 0 then
+            if tbl.count(same_new_captures) > 0 then
                 pprint("SAME:", same_new_captures)
                 table.insert(self.flip_groups, { animation = "same", targets = same_new_captures })
             end
@@ -346,7 +346,7 @@ function update(self, dt)
                 end
             end
 
-            if #combo_captures > 0 then
+            if tbl.count(combo_captures) > 0 then
                 pprint("COMBO:", combo_captures)
                 table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
             end
@@ -368,7 +368,7 @@ function update(self, dt)
                 end
             end
 
-            if #plus_new_captures > 0 then
+            if tbl.count(plus_new_captures) > 0 then
                 pprint("PLUS:", plus_new_captures)
                 table.insert(self.flip_groups, { animation = "plus", targets = plus_new_captures })
             end
@@ -386,13 +386,13 @@ function update(self, dt)
                 end
             end
 
-            if #combo_captures > 0 then
+            if tbl.count(combo_captures) > 0 then
                 pprint("COMBO:", combo_captures)
                 table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
             end
         end
 
-        if #self.flip_groups > 0 then
+        if tbl.count(self.flip_groups) > 0 then
             msg.post(".", "pop_flip_group")
             return
         end
@@ -621,7 +621,7 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "board_finished_flipping" then
         pprint("game: board_finished_flipping", message)
 
-        if #self.flip_groups > 0 then
+        if tbl.count(self.flip_groups) > 0 then
             msg.post(".", "pop_flip_group")
             return
         end

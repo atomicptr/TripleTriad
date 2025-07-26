@@ -66,14 +66,14 @@ end
 ---@param direction "up"|"down"
 local function apply_cursor_movement(self, direction)
     if direction == "up" then
-        if self.selected_index == #self.cards then
+        if self.selected_index == tbl.count(self.cards) then
             self.selected_index = 1
         else
             self.selected_index = self.selected_index + 1
         end
     elseif direction == "down" then
         if self.selected_index <= 1 then
-            self.selected_index = #self.cards
+            self.selected_index = tbl.count(self.cards)
         else
             self.selected_index = self.selected_index - 1
         end

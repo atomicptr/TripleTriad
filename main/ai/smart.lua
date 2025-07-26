@@ -2,6 +2,7 @@ local cards = require "main.data.cards"
 local Grid = require "modules.grid"
 local Rng = require "modules.rng"
 local combat = require "main.combat"
+local tbl = require "modules.tbl"
 
 local Pos = Grid.Pos
 
@@ -79,7 +80,7 @@ local function defensive_move(hand, board, rules)
     local corners = find_empty_corners(board)
 
     -- NOTE: this case cant happen when ai starts first
-    if #corners == 0 then
+    if tbl.count(corners) == 0 then
         return nil
     end
 
@@ -252,7 +253,7 @@ local function capturing_move(hand, board, rules)
         end
     end
 
-    if #capturing_moves == 0 then
+    if tbl.count(capturing_moves) == 0 then
         return nil
     end
 

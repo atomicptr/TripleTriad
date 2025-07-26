@@ -1,3 +1,5 @@
+local tblx = require "modules.tbl"
+
 local M = {}
 
 function M.init()
@@ -29,11 +31,11 @@ function M.draw(tbl)
 end
 
 function M.draw_index(tbl)
-    if not tbl or #tbl == 0 then
+    if not tbl or tblx.count(tbl) == 0 then
         return nil
     end
 
-    return math.random(1, #tbl)
+    return math.random(1, tblx.count(tbl))
 end
 
 function M.enum(tbl)

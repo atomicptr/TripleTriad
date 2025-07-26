@@ -240,7 +240,7 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "card_finished_flipping" then
         pprint("board: card_finished_flipping", message)
 
-        if #self.cards_to_flip == 0 then
+        if tbl.count(self.cards_to_flip) == 0 then
             msg.post("/game", "board_finished_flipping")
             return
         end
