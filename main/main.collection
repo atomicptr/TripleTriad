@@ -43,28 +43,27 @@ instances {
     z: 95.0
   }
 }
-scale_along_z: 0
-embedded_instances {
+instances {
   id: "camera"
-  data: "components {\n"
-  "  id: \"camera_script\"\n"
-  "  component: \"/main/camera.script\"\n"
-  "}\n"
-  "embedded_components {\n"
-  "  id: \"camera\"\n"
-  "  type: \"camera\"\n"
-  "  data: \"aspect_ratio: 1.0\\n"
-  "fov: 0.7854\\n"
-  "near_z: 0.1\\n"
-  "far_z: 1000.0\\n"
-  "orthographic_projection: 1\\n"
-  "\"\n"
-  "}\n"
-  ""
+  prototype: "/orthographic/camera.go"
   position {
     z: 100.0
   }
+  component_properties {
+    id: "script"
+    properties {
+      id: "far_z"
+      value: "200.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+    properties {
+      id: "automatic_zoom"
+      value: "true"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+  }
 }
+scale_along_z: 0
 embedded_instances {
   id: "game"
   data: "components {\n"

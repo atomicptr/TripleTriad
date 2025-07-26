@@ -1,6 +1,6 @@
 local Element = require "main.data.elements"
 local cards = require "main.data.cards"
-local screen = require "main.screen"
+local camera = require "orthographic.camera"
 
 go.property("card_id", 1)
 go.property("player_card", false)
@@ -121,7 +121,7 @@ function on_message(self, message_id, message, sender)
         self.modifier = message.modifier or 0
         setup_card(self)
     elseif message_id == hash "dragging" then
-        local pos = screen.screen_to_world(message.pos)
+        local pos = camera.screen_to_world(nil, message.pos)
         go.set_position(vmath.vector3(pos.x, pos.y, 75))
     elseif message_id == hash "drag_ended" then
         pprint("card: drag_ended", message, sender)

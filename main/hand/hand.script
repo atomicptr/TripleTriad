@@ -1,7 +1,7 @@
 local Ruleset = require "main.data.rulesets"
 local tbl = require "modules.tbl"
-local screen = require "main.screen"
 local math2 = require "modules.math2"
+local camera = require "orthographic.camera"
 
 go.property("player_hand", false)
 
@@ -175,7 +175,7 @@ function on_message(self, message_id, message, sender)
 
         for _, card_id in ipairs(self.cards) do
             local card_pos = go.get_world_position(card_id)
-            local card_screen_pos = screen.world_to_screen(card_pos)
+            local card_screen_pos = camera.world_to_screen(nil, card_pos)
 
             if math2.point_in_rect(pos, card_screen_pos, 200) then
                 msg.post(sender, "hand_hover_card", {
@@ -191,7 +191,7 @@ function on_message(self, message_id, message, sender)
 
         for index, card_id in ipairs(self.cards) do
             local card_pos = go.get_world_position(card_id)
-            local card_screen_pos = screen.world_to_screen(card_pos)
+            local card_screen_pos = camera.world_to_screen(nil, card_pos)
 
             if math2.point_in_rect(message.mouse_pos, card_screen_pos, 200) then
                 local pos = go.get_position(card_id)

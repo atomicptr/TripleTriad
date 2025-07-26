@@ -1,11 +1,13 @@
 local Grid = require "modules.grid"
 local Ruleset = require "main.data.rulesets"
-local screen = require "main.screen"
 local math2 = require "modules.math2"
+local camera = require "orthographic.camera"
 
 local tbl = require "modules.tbl"
 
 local Pos = Grid.Pos
+
+local CARD_PLACE_THRESHOLD = 175
 
 local card_pos = {
     [Pos.North] = {
@@ -268,9 +270,9 @@ function on_message(self, message_id, message, sender)
         for _, row in ipairs(Grid.Rows) do
             for _, col in ipairs(Grid.Cols) do
                 local cell_pos = card_pos[row][col]
-                local cell_screen_pos = screen.world_to_screen(cell_pos)
+                local cell_screen_pos = camera.world_to_screen(nil, cell_pos)
 
-                if math2.point_in_rect(pos, cell_screen_pos, 100) then
+                if math2.point_in_rect(pos, cell_screen_pos, CARD_PLACE_THRESHOLD) then
                     -- TODO: show some sort of droppy effect
                     return
                 end
@@ -282,9 +284,9 @@ function on_message(self, message_id, message, sender)
         for _, row in ipairs(Grid.Rows) do
             for _, col in ipairs(Grid.Cols) do
                 local cell_pos = card_pos[row][col]
-                local cell_screen_pos = screen.world_to_screen(cell_pos)
+                local cell_screen_pos = camera.world_to_screen(nil, cell_pos)
 
-                if math2.point_in_rect(message.pos, cell_screen_pos, 100) then
+                if math2.point_in_rect(message.pos, cell_screen_pos, CARD_PLACE_THRESHOLD) then
                     msg.post(sender, "board_drop_response", {
                         granted = true,
                         row = row,

@@ -1,5 +1,6 @@
 [bootstrap]
 main_collection = /main/main.collectionc
+render = /orthographic/render/orthographic.renderc
 
 [display]
 width = 1200
@@ -16,10 +17,14 @@ cssfile = /builtins/manifests/web/dark_theme.css
 [project]
 title = TripleTriad
 developer = atomicptr.dev
+dependencies#0 = https://github.com/britzl/defold-orthographic/archive/refs/tags/3.4.1.zip
 
 [sprite]
 max_count = 256
 
 [native_extension]
 app_manifest = /game.appmanifest
+
+[script]
+shared_state = 1
 
