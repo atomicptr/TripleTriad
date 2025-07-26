@@ -459,17 +459,13 @@ function update(self, dt)
             self.end_started = true
             pprint("Score: ", score, self.can_end)
 
-            timer.delay(1, false, function()
-                if score.player == score.enemy then
-                    msg.post("/gameover", "gameover", { result = "draw" })
-                elseif score.player > score.enemy then
-                    msg.post("/gameover", "gameover", { result = "win" })
-                else
-                    msg.post("/gameover", "gameover", { result = "lose" })
-                end
-
-                self.can_end = true
-            end)
+            if score.player == score.enemy then
+                msg.post("/gameover", "gameover", { result = "draw" })
+            elseif score.player > score.enemy then
+                msg.post("/gameover", "gameover", { result = "win" })
+            else
+                msg.post("/gameover", "gameover", { result = "lose" })
+            end
         end
     end
 end
@@ -695,6 +691,8 @@ function on_message(self, message_id, message, sender)
                 targets = targets,
             })
         end
+    elseif message_id == hash "gameover_can_end" then
+        self.can_end = true
     end
 end
 

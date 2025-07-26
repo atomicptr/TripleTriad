@@ -14,20 +14,6 @@ embedded_components {
   ""
 }
 embedded_components {
-  id: "text"
-  type: "sprite"
-  data: "default_animation: \"result-win\"\n"
-  "material: \"/builtins/materials/sprite.material\"\n"
-  "textures {\n"
-  "  sampler: \"texture_sampler\"\n"
-  "  texture: \"/assets/gameover_text.atlas\"\n"
-  "}\n"
-  ""
-  position {
-    z: 0.5
-  }
-}
-embedded_components {
   id: "restart"
   type: "label"
   data: "size {\n"
