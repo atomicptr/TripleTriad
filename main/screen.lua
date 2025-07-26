@@ -4,7 +4,7 @@ local M = {}
 ---@return vector3
 function M.world_to_screen(pos)
     local screen_width, screen_height = window.get_size()
-    local zoom = window.get_display_scale()
+    local zoom = go.get("/camera#camera", "orthographic_zoom")
 
     local screen_x = (pos.x * zoom) + (screen_width * 0.5)
     local screen_y = (pos.y * zoom) + (screen_height * 0.5)
@@ -16,7 +16,7 @@ end
 ---@return vector3
 function M.screen_to_world(pos)
     local screen_width, screen_height = window.get_size()
-    local zoom = window.get_display_scale()
+    local zoom = go.get("/camera#camera", "orthographic_zoom")
 
     local world_x = (pos.x - screen_width * 0.5) / zoom
     local world_y = (pos.y - screen_height * 0.5) / zoom
