@@ -239,8 +239,6 @@ local function end_battle_phase(self)
             self.state = State.PLAYER_HAND
             return
         end
-
-        -- TODO: send message to enemy something
     else
         self.state = State.PLAYER_HAND
 
@@ -468,8 +466,6 @@ function update(self, dt)
         end)
     elseif self.state == State.GAME_END then
         local score = count_score(self)
-
-        -- TODO: dont just open gameover but animate it into
 
         if not self.end_started then
             self.end_started = true
