@@ -55,6 +55,22 @@ local scenarios = {
             { pos = { row = Pos.South, col = Pos.East }, card = 13, owner = "enemy" },
         },
     },
+
+    TestPlusCombo = {
+        start_turn = "player",
+        player_hand = { 110, 110, 110 },
+        enemy_hand = { 1, 1, 1 },
+        rules = {
+            Ruleset.Open,
+            Ruleset.Plus,
+            Ruleset.Combo,
+        },
+        field = make_grid {
+            { pos = { row = Pos.North, col = Pos.Center }, card = 17, owner = "enemy" },
+            { pos = { row = Pos.South, col = Pos.Center }, card = 82, owner = "enemy" },
+            { pos = { row = Pos.Center, col = Pos.West }, card = 23, owner = "enemy" },
+        },
+    },
 }
 
 return scenarios

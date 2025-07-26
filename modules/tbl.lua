@@ -43,4 +43,17 @@ function M.filter(tbl, callback)
     return res
 end
 
+---@generic T
+---@param tbl T[]
+---@return integer
+function M.count(tbl)
+    local count = 0
+
+    for _, _ in pairs(tbl) do
+        count = count + 1
+    end
+
+    return count
+end
+
 return M

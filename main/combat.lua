@@ -162,6 +162,98 @@ function M.process_same(card, card_pos, board, rules)
     end)
 end
 
+---@param card Card
+---@param card_pos BoardPos
+---@param board GameField
+---@param rules Ruleset[]
+---@return CardSlot[]
+function M.process_plus(card, card_pos, board, rules)
+    assert(tbl.contains(rules, Ruleset.Plus))
+
+    local targets = M.get_orthogonal_cards(board, card_pos.row, card_pos.col)
+
+    local valid_targets = tbl.filter(targets, function(item)
+        return item.slot.card ~= nil
+    end)
+
+    -- rule only applies if we even have two or more targets to begin with
+    if #valid_targets < 2 then
+        return {}
+    end
+
+    local is_element = tbl.contains(rules, Ruleset.Elemental)
+    local field_element = nil
+    local owner = board[card_pos.row][card_pos.col].owner
+
+    local card_vals = M.card_values(card, field_element, rules)
+
+    if is_element then
+        field_element = board[card_pos.row][card_pos.col].element
+    end
+
+    local dir_values = {}
+
+    for _, target in ipairs(valid_targets) do
+        local target_card = target.slot.card
+        assert(target_card)
+
+        local target_vals = M.card_values(target_card, target.slot.element, rules)
+
+        -- calculate all directions
+        if target.direction == "up" then
+            local value = card_vals.top + target_vals.bottom
+
+            if not dir_values[value] then
+                dir_values[value] = {}
+            end
+
+            table.insert(dir_values[value], target.slot)
+        elseif target.direction == "down" then
+            local value = card_vals.bottom + target_vals.top
+
+            if not dir_values[value] then
+                dir_values[value] = {}
+            end
+
+            table.insert(dir_values[value], target.slot)
+        elseif target.direction == "left" then
+            local value = card_vals.left + target_vals.right
+
+            if not dir_values[value] then
+                dir_values[value] = {}
+            end
+
+            table.insert(dir_values[value], target.slot)
+        elseif target.direction == "right" then
+            local value = card_vals.right + target_vals.left
+
+            if not dir_values[value] then
+                dir_values[value] = {}
+            end
+
+            table.insert(dir_values[value], target.slot)
+        end
+    end
+
+    local res = {}
+
+    for _, dir_targets in pairs(dir_values) do
+        if tbl.count(dir_targets) >= 2 then
+            for _, target in ipairs(dir_targets) do
+                table.insert(res, target)
+            end
+        end
+    end
+
+    if tbl.count(res) < 2 then
+        return {}
+    end
+
+    return tbl.filter(res, function(item)
+        return item.owner ~= owner
+    end)
+end
+
 ---@param owner "player"|"enemy"
 ---@param flipped_cards CardSlot[]
 ---@param board GameField

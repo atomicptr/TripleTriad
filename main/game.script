@@ -26,6 +26,7 @@ local State = {
 
 local SCENARIO = nil
 -- local SCENARIO = require("main.data.scenario").TestSameCombo
+-- local SCENARIO = require("main.data.scenario").TestPlusCombo
 
 ---@class Game
 ---@field state State
@@ -100,6 +101,7 @@ local function setup_game(self)
     self.rules = {
         Ruleset.Elemental,
         Ruleset.Same,
+        Ruleset.Plus,
     }
 
     -- do this AFTER setting rules :)
@@ -341,6 +343,46 @@ function update(self, dt)
 
                 if not is_new then
                     table.insert(combo_captures, fc)
+                end
+            end
+
+            if #combo_captures > 0 then
+                pprint("COMBO:", combo_captures)
+                table.insert(self.flip_groups, { animation = "combo", targets = combo_captures })
+            end
+        end
+
+        if tbl.contains(self.rules, Ruleset.Plus) then
+            local plus_captures = {}
+            local plus_new_captures = {}
+
+            for _, fc in ipairs(combat.process_plus(new_card, new_card_pos, self.field, self.rules)) do
+                local is_new = tbl.some(flip_cards, function(item)
+                    return fc.row == item.row and fc.col == item.col
+                end)
+
+                table.insert(plus_captures, fc)
+
+                if not is_new then
+                    table.insert(plus_new_captures, fc)
+                end
+            end
+
+            if #plus_new_captures > 0 then
+                pprint("PLUS:", plus_new_captures)
+                table.insert(self.flip_groups, { animation = "plus", targets = plus_new_captures })
+            end
+
+            -- process combo
+            local combo_captures = {}
+
+            for _, fc in ipairs(combat.process_combo(owner, plus_captures, self.field, self.rules)) do
+                local is_new = tbl.some(flip_cards, function(item)
+                    return fc.row == item.row and fc.col == item.col
+                end)
+
+                if not is_new then
+                    table.insert(plus_captures, fc)
                 end
             end
 
@@ -595,21 +637,22 @@ function on_message(self, message_id, message, sender)
 
         local flip_group = table.remove(self.flip_groups, 1)
 
-        -- flip in data model
-        for _, card in ipairs(flip_group.targets) do
-            local owner = self.field[card.row][card.col].owner
+        local current_owner = "enemy"
+        if self.player_turn then
+            current_owner = "player"
+        end
 
-            if owner == "player" then
-                self.field[card.row][card.col].owner = "enemy"
-            else
-                self.field[card.row][card.col].owner = "player"
-            end
+        local targets = flip_group.targets
+
+        -- change owner to current in targets
+        for _, card in ipairs(targets) do
+            self.field[card.row][card.col].owner = current_owner
         end
 
         if flip_group.animation then
             msg.post("/capturefx", "flip_cards", {
                 animation = flip_group.animation,
-                targets = flip_group.targets,
+                targets = targets,
             })
 
             if flip_group.animation == "combo" then
@@ -617,7 +660,7 @@ function on_message(self, message_id, message, sender)
             end
         else
             msg.post("/board", "flip_cards", {
-                targets = flip_group.targets,
+                targets = targets,
             })
         end
     end
