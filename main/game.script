@@ -24,9 +24,11 @@ local State = {
     GAME_END = 5,
 }
 
+---@type Scenario
 local SCENARIO = nil
 -- local SCENARIO = require("main.data.scenario").TestSameCombo
 -- local SCENARIO = require("main.data.scenario").TestPlusCombo
+-- local SCENARIO = require("main.data.scenario").ElementStuff
 
 ---@class Game
 ---@field state State
@@ -162,6 +164,8 @@ end
 ---@param self Game
 local function setup_scenario(self)
     reset_game(self)
+
+    assert(SCENARIO)
 
     self.rules = SCENARIO.rules
 

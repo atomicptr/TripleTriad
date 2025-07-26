@@ -73,11 +73,11 @@ function M.process_combat(card, card_pos, board, rules)
     local field_element = nil
     local owner = board[card_pos.row][card_pos.col].owner
 
-    local card_vals = M.card_values(card, field_element, rules)
-
     if is_element then
         field_element = board[card_pos.row][card_pos.col].element
     end
+
+    local card_vals = M.card_values(card, field_element, rules)
 
     local targets = M.get_orthogonal_cards(board, card_pos.row, card_pos.col)
 

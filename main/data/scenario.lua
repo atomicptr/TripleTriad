@@ -1,3 +1,4 @@
+local Element = require "main.data.elements"
 local Grid = require "modules.grid"
 local Ruleset = require "main.data.rulesets"
 local cards = require "main.data.cards"
@@ -69,6 +70,22 @@ local scenarios = {
             { pos = { row = Pos.North, col = Pos.Center }, card = 17, owner = "enemy" },
             { pos = { row = Pos.South, col = Pos.Center }, card = 82, owner = "enemy" },
             { pos = { row = Pos.Center, col = Pos.West }, card = 23, owner = "enemy" },
+        },
+    },
+
+    ElementStuff = {
+        start_turn = "player",
+        player_hand = { 17, 17, 17 },
+        enemy_hand = { 107, 107, 107 },
+        rules = {
+            Ruleset.Open,
+            Ruleset.Elemental,
+        },
+        field = make_grid {
+            { pos = { row = Pos.Center, col = Pos.Center }, card = nil, element = Element.Fire },
+            { pos = { row = Pos.Center, col = Pos.West }, card = nil, element = Element.Wind },
+            { pos = { row = Pos.South, col = Pos.Center }, card = 107, owner = "enemy" },
+            { pos = { row = Pos.South, col = Pos.West }, card = 17, owner = "enemy" },
         },
     },
 }

@@ -30,6 +30,11 @@ end
 ---@param sender hash
 function on_message(self, message_id, message, sender)
     if message_id == hash "set_element" then
+        if not message.element then
+            msg.post("#sprite", "disable")
+            return
+        end
+
         sprite.play_flipbook("#sprite", element_hash(message.element))
     end
 end
