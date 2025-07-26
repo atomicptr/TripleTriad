@@ -95,6 +95,7 @@ end
 
 function init(self)
     self.modifier = 0
+    self.z = go.get_position().z
 
     set_background(self)
     setup_card(self)
@@ -108,14 +109,12 @@ function on_message(self, message_id, message, sender)
     if message_id == hash "flip" then
         pprint("card: flip", message)
 
-        -- TODO: play cool animation
         self.player_card = not self.player_card
         set_background(self)
 
-        go.animate(".", "scale.x", go.PLAYBACK_ONCE_PINGPONG, 0, go.EASING_INBOUNCE, 0.2, 0.0, function()
-            msg.post("/game", "card_flipped")
+        msg.post("/game", "card_flipped")
 
-            -- TODO: after animation is done, call back
+        go.animate(".", "scale.x", go.PLAYBACK_ONCE_PINGPONG, 0, go.EASING_INBOUNCE, 0.2, 0.0, function()
             msg.post("/board", "card_finished_flipping")
         end)
     elseif message_id == hash "set_modifier" then
@@ -127,9 +126,16 @@ function on_message(self, message_id, message, sender)
     elseif message_id == hash "drag_ended" then
         pprint("card: drag_ended", message, sender)
 
-        -- TODO: animate
-        go.set_position(message.orig_pos)
-
-        msg.post("/game", "card_drag_ended")
+        go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, message.orig_pos, go.EASING_LINEAR, 0.1, 0.0, function()
+            msg.post("/game", "card_drag_ended")
+        end)
+    elseif message_id == hash "hovering_start" then
+        go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, vmath.vector3(1.2, 1.2, 1), go.EASING_LINEAR, 0.1, 0.0)
+        local pos = go.get_position()
+        go.set_position(vmath.vector3(pos.x, pos.y, 65))
+    elseif message_id == hash "hovering_stop" then
+        go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, vmath.vector3(1, 1, 1), go.EASING_LINEAR, 0.1, 0.0)
+        local pos = go.get_position()
+        go.set_position(vmath.vector3(pos.x, pos.y, self.z))
     end
 end

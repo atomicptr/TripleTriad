@@ -270,7 +270,7 @@ function on_message(self, message_id, message, sender)
                 local cell_pos = card_pos[row][col]
                 local cell_screen_pos = screen.world_to_screen(cell_pos)
 
-                if math2.point_in_rect(pos, cell_screen_pos, 200) then
+                if math2.point_in_rect(pos, cell_screen_pos, 100) then
                     -- TODO: show some sort of droppy effect
                     return
                 end
@@ -284,7 +284,7 @@ function on_message(self, message_id, message, sender)
                 local cell_pos = card_pos[row][col]
                 local cell_screen_pos = screen.world_to_screen(cell_pos)
 
-                if math2.point_in_rect(message.pos, cell_screen_pos, 200) then
+                if math2.point_in_rect(message.pos, cell_screen_pos, 100) then
                     msg.post(sender, "board_drop_response", {
                         granted = true,
                         row = row,

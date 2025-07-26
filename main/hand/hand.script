@@ -178,10 +178,14 @@ function on_message(self, message_id, message, sender)
             local card_screen_pos = screen.world_to_screen(card_pos)
 
             if math2.point_in_rect(pos, card_screen_pos, 200) then
-                -- TODO: do some sort of hover animation
+                msg.post(sender, "hand_hover_card", {
+                    object = card_id,
+                })
                 return
             end
         end
+
+        msg.post(sender, "hand_hover_card") -- to tell game that its over
     elseif message_id == hash "drag_started" then
         pprint("hand: drag_started", message)
 

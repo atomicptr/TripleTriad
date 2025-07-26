@@ -52,6 +52,7 @@ local SCENARIO = nil
 ---@field mouse_pos vector3
 ---@field drag_object hash|nil
 ---@field drag_orig_pos vector3
+---@field hand_hovering hash|nil
 
 ---@param self Game
 function init(self)
@@ -679,6 +680,8 @@ function on_message(self, message_id, message, sender)
         end
 
         play_sound "card"
+
+        self.drag_object = nil
     elseif message_id == hash "hand_selected_card" then
         pprint("game: hand_selected_card", message)
 
@@ -767,6 +770,11 @@ function on_message(self, message_id, message, sender)
         self.drag_object = message.object
         self.drag_orig_pos = message.orig_pos
         self.hand_selected = message.hand_index
+
+        if self.hand_hovering then
+            msg.post(self.hand_hovering, "hovering_stop")
+            self.hand_hovering = nil
+        end
     elseif message_id == hash "card_drag_ended" then
         pprint("game: card_drag_ended", message)
 
@@ -776,6 +784,7 @@ function on_message(self, message_id, message, sender)
 
         if message.granted then
             if not self.field[message.row][message.col].card then
+                self.hand_hovering = nil
                 msg.post("/board", "place_card", {
                     player_card = true,
                     row = message.row,
@@ -788,6 +797,18 @@ function on_message(self, message_id, message, sender)
         end
 
         msg.post(self.drag_object, "drag_ended", { orig_pos = self.drag_orig_pos })
+    elseif message_id == hash "hand_hover_card" then
+        if self.hand_hovering then
+            msg.post(self.hand_hovering, "hovering_stop")
+            self.hand_hovering = nil
+        end
+
+        if not message.object then
+            return
+        end
+
+        self.hand_hovering = message.object
+        msg.post(message.object, "hovering_start")
     elseif message_id == hash "gameover_can_end" then
         self.can_end = true
     end
